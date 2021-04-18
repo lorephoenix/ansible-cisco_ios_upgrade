@@ -35,7 +35,7 @@
     - name: ios_2_cleaning | Parse from command 'dir <filesystem>'
       ansible.builtin.set_fact:
         file_deletion: '{{ commands_output.results
-          | ios_parse_data_for_deletion(
+          | parse_data_for_deletion(
             ansible_net_image,
             required_ios_binary,
             True 
@@ -54,7 +54,7 @@
     #   ]
     #--------------------------------------------------------------------------
     - name: ios_2_cleaning | Summarize files to be deleted
-      when: debug_all or debug_ios
+      when: debug
       ansible.builtin.debug: 
         msg: "delete {{ item.0.filesystem }}{{ item.1 }}"
       loop: "{{ file_deletion | subelements('deletion') }}"

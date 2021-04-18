@@ -51,7 +51,7 @@
     # data_transfer = "upload"
     #--------------------------------------------------------------------------
     - name: ios_3_staging | Debug
-      when: debug_all or debug_ios
+      when: debug
       ansible.builtin.debug: var=data_transfer
     
     #--------------------------------------------------------------------------
@@ -138,7 +138,7 @@
           vars:
             ansible_command_timeout: 3600
           ansible.netcommon.net_put:
-            src: 'files/{{ ansible_net_iostype|upper }}/{{ model_variant }}/{{ required_ios_binary }}'
+            src: 'files/{{ model_variant }}/{{ required_ios_binary }}'
             protocol: scp
             dest: '{{ filesystem }}{{ required_ios_binary[:-4] }}/{{ required_ios_binary }}'
           loop_control:

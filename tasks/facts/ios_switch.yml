@@ -8,7 +8,7 @@
 # ██║╚██████╔╝███████║███████╗███████║╚███╔███╔╝██║   ██║   ╚██████╗██║  ██║
 # ╚═╝ ╚═════╝ ╚══════╝╚══════╝╚══════╝ ╚══╝╚══╝ ╚═╝   ╚═╝    ╚═════╝╚═╝  ╚═╝
 # 
-# ios "show switch" facts
+# "show switch"
 
 #------------------------------------------------------------------------------
 # If the list variable 'device_version_info' is empty then the remote device is 
@@ -25,7 +25,7 @@
     # True: Found the string 'switch'.
     # False: Unable to find the string 'switch'.
     #--------------------------------------------------------------------------
-    - name: "{{ section }} | ios_switch | Parse from command 'show ?' to search the string 'switch'"
+    - name: "{{ section }} | facts | ios_switch | Parse from command 'show ?' to search the string 'switch'"
       ansible.builtin.set_fact:
         show_switch: "{{ commands_output_list.stdout[1] 
           | find_commands('show switch',
@@ -40,14 +40,14 @@
     #--------------------------------------------------------------------------
     # Remote device is classified as a switch with stack abilities.
     #--------------------------------------------------------------------------
-    - name: ios_sw_facts | ios_switch | SWITCH
+    - name: ios_sw_facts | facts | ios_switch | SWITCH
       when: show_switch
       block:
     
       #------------------------------------------------------------------------
       # Run Cisco command 'show switch' and capture the command output.
       #------------------------------------------------------------------------
-      - name: "{{ section }} | ios_switch | SWITCH | Run command 'show switch'"
+      - name: "{{ section }} | facts | ios_switch | SWITCH | Run command 'show switch'"
         register: command_switch_output
         cisco.ios.ios_command:
           commands:
@@ -56,7 +56,7 @@
       #------------------------------------------------------------------------
       # Parse data from command 'show switch'
       #------------------------------------------------------------------------
-      - name: "{{ section }} | ios_switch | SWITCH | Parse 'show switch'"
+      - name: "{{ section }} | facts | ios_switch | SWITCH | Parse 'show switch'"
         ansible.builtin.set_fact:
           device_switch_info: "{{ command_switch_output.stdout[0] 
             | parse_show_switch( 
@@ -67,7 +67,7 @@
           switch_state_list: []
 
       #------------------------------------------------------------------------
-      # Print list when debug_all or debug_ios has the boolean True.
+      # Print list when debug has the boolean True.
       # device_switch_info = [
       #   {
       #     "Current State": <model string>,
@@ -79,14 +79,14 @@
       #   },
       # ]
       #------------------------------------------------------------------------
-      - name: "{{ section }} | ios_switch | SWITCH | Debug"
-        when: debug_all or debug_ios
+      - name: "{{ section }} | facts | ios_switch | SWITCH | Debug"
+        when: debug
         ansible.builtin.debug: var=device_switch_info
 
       #------------------------------------------------------------------------
       # Build a list with unique values behind dictionary key 'Current State'.
       #------------------------------------------------------------------------
-      - name: "{{ section }} | ios_switch | SWITCH | Check switch 'Current State'"
+      - name: "{{ section }} | facts | ios_switch | SWITCH | Check switch 'Current State'"
         ansible.builtin.set_fact:
           switch_state_list: "{{ device_switch_info 
             | selectattr('Current State', 'defined') 
@@ -96,7 +96,7 @@
       # Check if the 'Current State' of each member has the same string value
       # AND if set with the string "READY"
       #------------------------------------------------------------------------
-      - name: "{{ section }} | ios_switch | SWITCH | Verify 'Current State' entries"
+      - name: "{{ section }} | facts | ios_switch | SWITCH | Verify 'Current State' entries"
         ansible.builtin.assert:
           that:
             - switch_state_list | length == 1

@@ -18,7 +18,7 @@
     # Run Cisco command 'show <device_filesystem_list item>' and capture the command
     # output.
     #--------------------------------------------------------------------------
-    - name: "{{ section }} | ios_filesystem | Run command 'show <device_filesystem_list item>'"
+    - name: "{{ section }} | facts | ios_filesystem | Run command 'show <device_filesystem_list item>'"
       register: commands_output
       cisco.ios.ios_command:
         commands:
@@ -28,7 +28,7 @@
     #--------------------------------------------------------------------------
     # Parse data from command output like 'show flash:'
     #--------------------------------------------------------------------------
-    - name: "{{ section }} | ios_filesystem | Run command 'show <device_filesystem_list item>'"
+    - name: "{{ section }} | facts | ios_filesystem | Run command 'show <device_filesystem_list item>'"
       ansible.builtin.set_fact:
         device_filesystem_info: "{{ commands_output.results | 
           parse_filesystem_list(
@@ -38,7 +38,7 @@
           ) }}"
     
     #----------------------------------------------------------------------
-    # Print list when debug_all or debug_ios has the boolean True.
+    # Print list when debug has the boolean True.
     # device_filesystem_info = 
     #   {
     #     'flash:' : 
@@ -48,8 +48,8 @@
     #       },
     #   },
     #----------------------------------------------------------------------
-    - name: "{{ section }} | ios_filesystem | Debug"
-      when: debug_all or debug_ios
+    - name: "{{ section }} | facts | ios_filesystem | Debug"
+      when: debug
       ansible.builtin.debug: var=device_filesystem_info
     
   tags:

@@ -15,7 +15,7 @@
     # Parse data from ansible.builtin.ios_facts - to get filesystem name from
     # rthe image file the device is running.
     #--------------------------------------------------------------------------
-    - name: "{{ section }} | ios_findbin | Capture the filesystem from running image file"
+    - name: "{{ section }} | facts | ios_findbin | Capture the filesystem from running image file"
       ansible.builtin.set_fact:
         device_filesystem: "{{ ansible_net_image.split(':')[0] }}"
         device_filesystem_list: []
@@ -26,7 +26,7 @@
     # Build a list of unique filesystem from device without stack 
     # functionality.
     #--------------------------------------------------------------------------
-    - name: "{{ section }} | ios_findbin | Build 'device_filesystem_list' for routers or standalone switches."
+    - name: "{{ section }} | facts | ios_findbin | Build 'device_filesystem_list' for routers or standalone switches."
       when: 
         - device_product|lower  == "router" or device_version_info|length == 1
       ansible.builtin.set_fact:
@@ -36,7 +36,7 @@
     # Build a list of unique filesystem from device without stack 
     # functionality.
     #--------------------------------------------------------------------------
-    - name: "{{ section }} | ios_findbin | Build 'device_filesystem_list' for stacked switches"
+    - name: "{{ section }} | facts | ios_findbin | Build 'device_filesystem_list' for stacked switches"
       when: 
         - device_product|lower  == "switch"
         - device_version_info|length > 1
@@ -49,17 +49,17 @@
     # Run Cisco command 'show <device_filesystem_list item>' and capture the command
     # output.
     #--------------------------------------------------------------------------
-    - name: "{{ section }} | ios_findbin | Run command 'dir <device_filesystem_list item>'"
+    - name: "{{ section }} | facts | ios_findbin | Run command 'dir <device_filesystem_list item>'"
       register: commands_output
       cisco.ios.ios_command:
         commands:
           - "dir {{ item }}"
       with_items: "{{ device_filesystem_list }}"
 
-    - name: "{{ section }} | ios_findbin | Parse command data to get required folder"
+    - name: "{{ section }} | facts | ios_findbin | Parse command data to get required folder"
       ansible.builtin.set_fact:
         device_findfolder_info: "{{ commands_output.results
-          | ios_findfolder( required_ios_binary[:-4] ,
+          | find_image_folder( required_ios_binary[:-4] ,
               True 
                 if (debug_filter is defined and debug_filter) 
                 else False
@@ -68,7 +68,7 @@
         
 
     #------------------------------------------------------------------------
-    # Print list when debug_all or debug_ios has the boolean True.
+    # Print list when debug has the boolean True.
     # device_findfolder_info = [
     #   {
     #     "filesystem": <filesystem string>,
@@ -76,15 +76,15 @@
     #   },
     # ]
     #------------------------------------------------------------------------
-    - name: "{{ section }} | ios_findbin | Debug"
-      when: debug_all or debug_ios
+    - name: "{{ section }} | facts | ios_findbin | Debug"
+      when: debug
       ansible.builtin.debug: var=device_findfolder_info
 
     
     #------------------------------------------------------------------------
     # Build a list with unique values behind dictionary key 'directory'.
     #------------------------------------------------------------------------
-    - name: "{{ section }} | ios_findbin | Build list 'directory'"
+    - name: "{{ section }} | facts | ios_findbin | Build list 'directory'"
       ansible.builtin.set_fact:
         folders: "{{
             device_findfolder_info 
@@ -97,7 +97,7 @@
     #------------------------------------------------------------------------
     # Build a list with unique values behind dictionary key 'directory'.
     #------------------------------------------------------------------------
-    - name: "{{ section }} | ios_findbin | Found required 'directory'"
+    - name: "{{ section }} | facts | ios_findbin | Found required 'directory'"
       ansible.builtin.set_fact:
         found_required_folder: "{{ 
           True
@@ -115,7 +115,7 @@
     # Only applicable for stacked device where one of the members has
     # the directory while one or all others don't have the directory.
     #----------------------------------------------------------------------
-    - name: "{{ section }} | ios_findbin | SWITCH"
+    - name: "{{ section }} | facts | ios_findbin | SWITCH"
       when: 
         - not found_required_folder
         - required_ios_binary[:-4] in folders
@@ -125,7 +125,7 @@
         # Delete the directory when :
         #   - the binary file can not be found on any member filesystem
         #----------------------------------------------------------------------
-        - name: "{{ section }} | ios_findbin | SWITCH | Delete directory"
+        - name: "{{ section }} | facts | ios_findbin | SWITCH | Delete directory"
           vars:
             ansible_command_timeout: 120
           cisco.ios.ios_command:
@@ -137,7 +137,7 @@
         #--------------------------------------------------------------------------
         # Reset if delete command was initiated
         #--------------------------------------------------------------------------
-        - name: "{{ section }} | ios_findbin | SWITCH | Reset variables"
+        - name: "{{ section }} | facts | ios_findbin | SWITCH | Reset variables"
           ansible.builtin.set_fact:
             found_required_file: False
             found_required_folder: False
@@ -145,7 +145,7 @@
     #----------------------------------------------------------------------
     # Directory found
     #----------------------------------------------------------------------
-    - name: "{{ section }} | ios_findbin | DIR"
+    - name: "{{ section }} | facts | ios_findbin | DIR"
       when: found_required_folder
       block:
     
@@ -153,16 +153,16 @@
         # Run Cisco command 'dir <filesystem><directory>' and 
         # capture the command output.
         #----------------------------------------------------------------------
-        - name: "{{ section }} | ios_findbin | DIR | Run command 'dir <filesystem><directory>'"
+        - name: "{{ section }} | facts | ios_findbin | DIR | Run command 'dir <filesystem><directory>'"
           register: commands_output
           cisco.ios.ios_command:
             commands: "dir {{ item.filesystem}}{{ item.directory}}"
           with_items: "{{ device_findfolder_info }}"
 
-        - name: "{{ section }} | ios_findbin | DIR | Parse command data to get required BIN file"
+        - name: "{{ section }} | facts | ios_findbin | DIR | Parse command data to get required BIN file"
           ansible.builtin.set_fact:
             device_findfile_info: "{{ commands_output.results
-              | ios_findfile( 
+              | find_image_file( 
                   device_findfolder_info,
                   required_ios_binary,
                   True 
@@ -180,14 +180,14 @@
         #       },
         #   }
         #----------------------------------------------------------------------
-        - name: "{{ section }} | ios_findbin | DIR | Debug"
-          when: debug_all or debug_ios
+        - name: "{{ section }} | facts | ios_findbin | DIR | Debug"
+          when: debug
           ansible.builtin.debug: var=device_findfile_info
 
         #----------------------------------------------------------------------
         # Build a list with unique values behind dictionary key 'file'.
         #----------------------------------------------------------------------
-        - name: "{{ section }} | ios_findbin | DIR | Found 'file'"
+        - name: "{{ section }} | facts | ios_findbin | DIR | Found 'file'"
           ansible.builtin.set_fact:
             found_required_file: "{{
               True
@@ -216,7 +216,7 @@
         # Delete the directory when :
         #   - the binary file can not be found on any member filesystem
         #----------------------------------------------------------------------
-        - name: "{{ section }} | ios_findbin | DIR | Delete directory"
+        - name: "{{ section }} | facts | ios_findbin | DIR | Delete directory"
           when: not found_required_file
           vars:
             ansible_command_timeout: 120

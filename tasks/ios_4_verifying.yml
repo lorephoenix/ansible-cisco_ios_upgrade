@@ -99,7 +99,7 @@
     # which means that one member doesn't match the checksum test.
     #--------------------------------------------------------------------------
     - name: ios_4_verifying | Debug
-      when: debug_all or debug_ios
+      when: debug
       ansible.builtin.debug: var=checksum_match
 
     #--------------------------------------------------------------------------

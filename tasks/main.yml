@@ -28,42 +28,42 @@
     - backup
 
 
-- name: ios | Set variable when using tag 'booting'
+- name: main | Set variable when using tag 'booting'
   ansible.builtin.set_fact:
     ios_next_step: booting
     using_tag: True
   tags: 
     - booting
 
-- name: ios | Set variable when using tag 'verifying'
+- name: main | Set variable when using tag 'verifying'
   ansible.builtin.set_fact:
     ios_next_step: verifying
     using_tag: True
   tags: 
     - verifying
 
-- name: ios | Set variable when using tag 'staging'
+- name: main | Set variable when using tag 'staging'
   ansible.builtin.set_fact:
     ios_next_step: staging
     using_tag: True
   tags: 
     - staging
 
-- name: ios | Set variable when using tag 'cleaning'
+- name: main | Set variable when using tag 'cleaning'
   ansible.builtin.set_fact:
     ios_next_step: cleaning
     using_tag: True
   tags: 
     - cleaning
 
-- name: ios | Set variable when using tag 'facts'
+- name: main | Set variable when using tag 'facts'
   ansible.builtin.set_fact:
     ios_next_step: facts
     using_tag: True
   tags: 
     - facts
 
-- name: ios | Set variable when not using any tag'
+- name: main | Set variable when not using any tag'
   ansible.builtin.set_fact:
     ios_next_step: facts
     using_tag: False

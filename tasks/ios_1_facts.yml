@@ -30,7 +30,6 @@
         True 
           if (debug_filter is defined and debug_filter) 
           else False ) }}"
-    device_next_step: "cleaning"
   tags:
     - facts
     - cleaning
