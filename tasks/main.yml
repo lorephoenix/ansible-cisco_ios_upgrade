@@ -1,0 +1,112 @@
+---
+# tasks file for ansible-cisco_ios_upgrade
+#
+#  ████████╗ █████╗ ███████╗██╗  ██╗
+#  ╚══██╔══╝██╔══██╗██╔════╝██║ ██╔╝
+#     ██║   ███████║███████╗█████╔╝ 
+#     ██║   ██╔══██║╚════██║██╔═██╗ 
+#     ██║   ██║  ██║███████║██║  ██╗
+#     ╚═╝   ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝
+#
+
+- name: main | Gathering Facts
+  ansible.builtin.ios_facts:
+    gather_subset: hardware
+  tags:
+    - backup
+    - facts
+    - cleaning
+    - staging
+    - verifying
+    - booting
+
+#------------------------------------------------------------------------------
+# Load the task if the device to backup device configuration.
+#------------------------------------------------------------------------------
+- include: 'backup.yml'
+  when:
+    - backup
+
+
+- name: ios | Set variable when using tag 'booting'
+  ansible.builtin.set_fact:
+    ios_next_step: booting
+    using_tag: True
+  tags: 
+    - booting
+
+- name: ios | Set variable when using tag 'verifying'
+  ansible.builtin.set_fact:
+    ios_next_step: verifying
+    using_tag: True
+  tags: 
+    - verifying
+
+- name: ios | Set variable when using tag 'staging'
+  ansible.builtin.set_fact:
+    ios_next_step: staging
+    using_tag: True
+  tags: 
+    - staging
+
+- name: ios | Set variable when using tag 'cleaning'
+  ansible.builtin.set_fact:
+    ios_next_step: cleaning
+    using_tag: True
+  tags: 
+    - cleaning
+
+- name: ios | Set variable when using tag 'facts'
+  ansible.builtin.set_fact:
+    ios_next_step: facts
+    using_tag: True
+  tags: 
+    - facts
+
+- name: ios | Set variable when not using any tag'
+  ansible.builtin.set_fact:
+    ios_next_step: facts
+    using_tag: False
+  
+
+#------------------------------------------------------------------------------
+# Gathering additional facts from remote device
+#------------------------------------------------------------------------------
+- include: "{{ ansible_net_iostype|lower}}_1_facts.yml"
+  
+#------------------------------------------------------------------------------
+# Cleaning IOS software
+#------------------------------------------------------------------------------
+- include: "{{ ansible_net_iostype|lower}}_2_cleaning.yml"
+  when:
+    - cleaning
+    - ios_next_step == "cleaning"
+    
+#------------------------------------------------------------------------------
+# Staging IOS software
+#------------------------------------------------------------------------------
+- include: "{{ ansible_net_iostype|lower}}_3_staging.yml"
+  when:
+    - ios_next_step == "staging"
+    - required_ios_binary != ansible_net_image
+    - required_ios_version != ansible_net_version
+
+#------------------------------------------------------------------------------
+# Verifing IOS software
+#------------------------------------------------------------------------------
+- include: "{{ ansible_net_iostype|lower}}_4_verifying.yml"
+  when:
+    - ios_next_step == "verifying" 
+    - required_ios_binary != ansible_net_image
+    - required_ios_version != ansible_net_version
+
+#------------------------------------------------------------------------------
+# Booting IOS software
+#------------------------------------------------------------------------------
+- include: "{{ ansible_net_iostype|lower}}_5_booting.yml"
+  when:
+    - booting
+    - ios_next_step == "booting"
+    - required_ios_binary != ansible_net_image
+    - required_ios_version != ansible_net_version
+

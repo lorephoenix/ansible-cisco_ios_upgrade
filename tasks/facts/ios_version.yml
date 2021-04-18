@@ -1,0 +1,99 @@
+---
+# tasks file for ansible-cisco_ios_upgrade
+# 
+# ██╗ ██████╗ ███████╗       ██╗   ██╗███████╗██████╗ ███████╗██╗ ██████╗ ███╗   ██╗
+# ██║██╔═══██╗██╔════╝       ██║   ██║██╔════╝██╔══██╗██╔════╝██║██╔═══██╗████╗  ██║
+# ██║██║   ██║███████╗       ██║   ██║█████╗  ██████╔╝███████╗██║██║   ██║██╔██╗ ██║
+# ██║██║   ██║╚════██║       ╚██╗ ██╔╝██╔══╝  ██╔══██╗╚════██║██║██║   ██║██║╚██╗██║
+# ██║╚██████╔╝███████║███████╗╚████╔╝ ███████╗██║  ██║███████║██║╚██████╔╝██║ ╚████║
+# ╚═╝ ╚═════╝ ╚══════╝╚══════╝ ╚═══╝  ╚══════╝╚═╝  ╚═╝╚══════╝╚═╝ ╚═════╝ ╚═╝  ╚═══╝
+# 
+# ios "show version" facts
+
+- name: ios_version
+  block:
+
+    #--------------------------------------------------------------------------
+    # Parse data coming from command 'show version' into a list
+    #--------------------------------------------------------------------------
+    - name: "{{ section }} | ios_version | Parse 'show version' data"
+      ansible.builtin.set_fact:
+        device_version_info: "{{ commands_output_list.stdout[0] 
+          | parse_show_version( 
+              True 
+                if (debug_filter is defined and debug_filter) 
+                else False
+              ) }}"
+        version_swimage_list: []
+        version_switch_list: []
+
+    #--------------------------------------------------------------------------
+    # If the version_data_info contains list items that it set to 
+    # device_product 'switch' otherwise 'router'.
+    #--------------------------------------------------------------------------
+    - name: "{{ section }} | ios_version | Determine device product"
+      ansible.builtin.set_fact:
+        device_product: "{{ 
+          'switch' 
+            if(device_version_info|length > 0) 
+            else 'router'
+        }}"
+
+
+    #--------------------------------------------------------------------------
+    # Processing parsed data from command 'show version'.
+    # If the list is empty then the remote device is router product else it is
+    # classified as a switch product.
+    # device_version_info = 
+    # [
+    #   {
+    #     "Model": <model string>,
+    #     "Ports": <ports integer>,
+    #     "SW Image": <image string>,
+    #     "SW Version": <version string>,
+    #     "Switch": <value integer>,
+    #   },
+    # ]
+    #--------------------------------------------------------------------------
+    - name: ios_sv_facts | ios_version | SWITCH
+      when: device_version_info|length > 0
+      block:
+      
+        #----------------------------------------------------------------------
+        # Print list when debug_all or debug_ios has the boolean True.
+        #----------------------------------------------------------------------
+        - name: "{{ section }} | ios_version | SWITCH | Debug"
+          when: debug_all or debug_ios
+          ansible.builtin.debug: var=device_version_info
+
+        #----------------------------------------------------------------------
+        # Build a list with unique values behind dictionary key 'SW Image'.
+        #----------------------------------------------------------------------
+        - name: "{{ section }} | ios_version | SWITCH | Check stack SW Image names"
+          ansible.builtin.set_fact:
+            version_swimage_list: "{{ device_version_info 
+              | selectattr('SW Image', 'defined') 
+              | map(attribute='SW Image') | unique | list }}"
+
+        #----------------------------------------------------------------------
+        # Check if the 'SW Image' of each member has the same image name AND
+        # if the 'SW Image' string is part of the string 'required_ios_binary'.
+        #----------------------------------------------------------------------
+        - name: "{{ section }} | ios_version | SWITCH | Verify 'SW Image' entries"
+          ansible.builtin.assert:
+            that:
+              - version_swimage_list | length < 2
+              - "{{ True 
+                    if (version_swimage_list[0]|lower in required_ios_binary)
+                    else False 
+                }}"
+            fail_msg: "All members of the switch stack must have the same 
+                      'SW Image' name and 'SW Image' name must be part of the 
+                      required IOS binary filename."
+
+  tags:
+    - facts
+    - cleaning
+    - staging
+    - verifying
+    - booting

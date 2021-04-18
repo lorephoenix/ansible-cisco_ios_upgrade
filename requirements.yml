@@ -1,0 +1,6 @@
+---
+collections:
+  - name: ansible.netcommon
+    source: https://galaxy.ansible.com
+  - name: cisco.ios
+    source: https://galaxy.ansible.com

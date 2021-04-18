@@ -1,0 +1,149 @@
+---
+# tasks file for ansible-cisco_ios_upgrade
+#
+# ██████╗  █████╗  ██████╗██╗  ██╗██╗   ██╗██████╗ 
+# ██╔══██╗██╔══██╗██╔════╝██║ ██╔╝██║   ██║██╔══██╗
+# ██████╔╝███████║██║     █████╔╝ ██║   ██║██████╔╝
+# ██╔══██╗██╔══██║██║     ██╔═██╗ ██║   ██║██╔═══╝ 
+# ██████╔╝██║  ██║╚██████╗██║  ██╗╚██████╔╝██║     
+# ╚═════╝ ╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝ ╚═════╝ ╚═╝     
+# 
+- name: backup
+  when: backup == True
+  block:
+
+    - name: backup | Set variable when using tag 'backup'
+      ansible.builtin.set_fact:
+        ios_next_step: facts
+      tags:
+        - backup
+
+    #--------------------------------------------------------------------------
+    # Whenever you make changes to the RPM configuration, you must save the 
+    # changes to memory so they will not be lost if the system is rebooted. 
+    # There are two types of configuration files: the running 
+    # (current operating) configuration and the startup configuration. The 
+    # running configuration is stored in RAM; the startup configuration is 
+    # stored in NVRAM.
+    #--------------------------------------------------------------------------
+    - name: backup | Save running to startup when modified
+      cisco.ios.ios_config:
+        save_when: modified
+
+    #--------------------------------------------------------------------------
+    # Cisco devices allow you to configure several descriptive system 
+    # parameters to ease in the administration of internetworking equipment. 
+    # The ability to document and identify networking equipment will make it 
+    # easier for network administrators to manage and maintain their network. 
+    # There are two ways that system information can be viewed or used.
+    #
+    # (1) Via Simple Network Management Protocol (SNMP) using an SNMP management 
+    #     station.
+    # (2) Via the command prompt on the switch.
+    #--------------------------------------------------------------------------
+    - name: backup | Configure top level configuration
+      cisco.ios.ios_config:
+        lines: hostname {{ inventory_hostname }}
+        save_when: modified
+
+    #--------------------------------------------------------------------------
+    # This will cause the module to create a full backup of the current
+    # running-config from the remote device before any changes are made. If the
+    # backup_options value is not given, the backup file is written to the 
+    # backup folder that is defined behind the defaults variable 'backup_dir'. 
+    # If the directory does not exist, it is created.
+    #--------------------------------------------------------------------------
+    - name: backup | Configurable backup path
+      cisco.ios.ios_config:
+        src: ios_template.j2
+        backup: yes
+        backup_options:
+          dir_path: "{{ backup_dir }}/{{ inventory_hostname }}"
+      register: backup_output
+      
+    #--------------------------------------------------------------------------
+    # Obtain the stats of 'latest.cfg' under the remote device directory name
+    # that is stored on the backup folder.
+    #--------------------------------------------------------------------------
+    - name: backup | Checking if file 'latest.cfg' exist
+      ansible.builtin.stat:
+        path: "{{ backup_dir }}/{{ inventory_hostname }}/latest.cfg"
+      register: latest_file
+
+
+    #--------------------------------------------------------------------------
+    # If the file 'latest.cfg' exist then:
+    #--------------------------------------------------------------------------
+    - name: backup | File 'latest.cfg' exist
+      when: 
+        - latest_file.stat.exists
+      block:
+
+        - name: backup | exists | Get checksum of collected running-config
+          ansible.builtin.stat:
+            path: "{{ backup_output.backup_path }}"
+            get_checksum: yes
+          register: run_config
+
+        - name: backup | exists | Copy running-config to 'latest.cfg', diff detected
+          when: run_config.stat.checksum != latest_file.stat.checksum
+          ansible.builtin.copy:
+            src: "{{ run_config.stat.path }}"
+            dest: "{{ backup_dir }}/{{ inventory_hostname }}/latest.cfg"
+            follow: yes
+
+        - name: backup | exists | Remove collected running-config, no diff with 'latest.cfg'
+          when: run_config.stat.checksum == latest_file.stat.checksum
+          ansible.builtin.file:
+            path: "{{ run_config.stat.path }}"
+            state: absent
+
+    #--------------------------------------------------------------------------
+    # If the file 'latest.cfg' doesn't exist then:
+    #--------------------------------------------------------------------------
+    - name: backup | File 'latest.cfg' is missing
+      when: 
+        - not latest_file.stat.exists
+      block:
+    
+        - name: backup | missing | Copy backup file as 'latest.cfg' due to missing file
+          ansible.builtin.copy:
+            src: "{{ backup_output.backup_path }}"
+            dest: "{{ backup_dir }}/{{ inventory_hostname }}/latest.cfg"
+            follow: yes
+
+    #--------------------------------------------------------------------------
+    # If the defaults variable 'backup_cleanup' is set with the Boolean true 
+    # then only keep the last defined amount of changed configuration files.
+    #--------------------------------------------------------------------------
+    - name: backup | Only keep the last {{ keep_newest_files }} configuration files
+      when: 
+        - backup_cleanup
+      block:
+  
+        - name: backup | cleanup | Retrieve file or file system status
+          ansible.builtin.stat:
+            path: "{{ backup_dir }}/{{ inventory_hostname }}/latest.cfg"
+          register: latest_file
+
+        - name: backup | cleanup | Summarize stored configuration files
+          ansible.builtin.find:
+            paths: "{{ backup_dir }}/{{ inventory_hostname }}"
+            file_type: file
+            age_stamp: mtime
+            excludes: 'latest.cfg'
+          register: stored_files
+
+        - name: backup | cleanup | Define list 'backup_files'
+          ansible.builtin.set_fact:
+            backup_files: "{{ stored_files.files | sort(attribute='mtime') | 
+                map(attribute='path')|list }}"
+    
+        - name: backup | cleanup | Remove the oldest configuration files
+          ansible.builtin.file:
+            path: "{{ item }}" 
+            state: absent
+          loop: "{{ backup_files[0:-backup_keep] }}"
+  tags:
+    - backup
+

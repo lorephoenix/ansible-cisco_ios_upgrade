@@ -1,0 +1,65 @@
+---
+# defaults file for ansible-cisco_ios_upgrade
+
+# -----------------------------------------------------------------------------
+# Enable or disable backups of running-configs from remote devices
+# -----------------------------------------------------------------------------
+backup: False
+
+# -----------------------------------------------------------------------------
+# Make configuration backups into hierarchy based in DIR.
+# -----------------------------------------------------------------------------
+backup_dir: "~/backup/network/Cisco/{{ ansible_net_system|lower }}"
+
+# -----------------------------------------------------------------------------
+# Enable or disable on cleaning the oldest stored configuration files.
+# -----------------------------------------------------------------------------
+backup_cleanup: True
+
+# -----------------------------------------------------------------------------
+# Part of backup_cleanup
+# Only keep the <number> newest changed configuration files.
+# -----------------------------------------------------------------------------
+backup_keep: 6
+
+# -----------------------------------------------------------------------------
+# Enable or disable to update boot variable
+# -----------------------------------------------------------------------------
+booting: False
+
+# -----------------------------------------------------------------------------
+# Enable or disable to cleanup unused IOS images
+# -----------------------------------------------------------------------------
+cleaning: True
+
+# -----------------------------------------------------------------------------
+# Specify how to get the IOS image on device.
+# Only possible options are:
+#   download: Copy file from remote SSH server to network device
+#   upload: Copy file from Ansible Controller to network device
+# -----------------------------------------------------------------------------
+data_transfer: upload
+
+# -----------------------------------------------------------------------------
+# Debug mode
+# -----------------------------------------------------------------------------
+debug: False
+debug_filter: True
+
+# -----------------------------------------------------------------------------
+# Delayed time (in minutes) to reboot the network device.
+# Only applicable when the default variable booting is set with the Boolean 
+# value 'True'.
+# -----------------------------------------------------------------------------
+reload_in: 5
+
+# -----------------------------------------------------------------------------
+# If the data_transfer is set with the string "download" then it is required
+# to specify a list remote_ssh_servers.
+# -----------------------------------------------------------------------------
+remote_ssh_servers:
+  - 127.0.0.1
+
+
+
+

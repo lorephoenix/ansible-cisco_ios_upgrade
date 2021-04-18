@@ -1,0 +1,65 @@
+---
+# tasks file for ansible-cisco_ios_upgrade
+#
+# ██╗ ██████╗ ███████╗        ███████╗██╗██╗     ███████╗███████╗██╗   ██╗███████╗████████╗███████╗███╗   ███╗
+# ██║██╔═══██╗██╔════╝        ██╔════╝██║██║     ██╔════╝██╔════╝╚██╗ ██╔╝██╔════╝╚══██╔══╝██╔════╝████╗ ████║
+# ██║██║   ██║███████╗        █████╗  ██║██║     █████╗  ███████╗ ╚████╔╝ ███████╗   ██║   █████╗  ██╔████╔██║
+# ██║██║   ██║╚════██║        ██╔══╝  ██║██║     ██╔══╝  ╚════██║  ╚██╔╝  ╚════██║   ██║   ██╔══╝  ██║╚██╔╝██║
+# ██║╚██████╔╝███████║███████╗██║     ██║███████╗███████╗███████║   ██║   ███████║   ██║   ███████╗██║ ╚═╝ ██║
+# ╚═╝ ╚═════╝ ╚══════╝╚══════╝╚═╝     ╚═╝╚══════╝╚══════╝╚══════╝   ╚═╝   ╚══════╝   ╚═╝   ╚══════╝╚═╝     ╚═╝
+# 
+# ios "show filesystem" facts
+
+- name: ios_filesystem
+  when: ansible_net_image is defined
+  block:
+
+    #--------------------------------------------------------------------------
+    # Run Cisco command 'show <device_filesystem_list item>' and capture the command
+    # output.
+    #--------------------------------------------------------------------------
+    - name: "{{ section }} | ios_filesystem | Run command 'show <device_filesystem_list item>'"
+      register: commands_output
+      cisco.ios.ios_command:
+        commands:
+          - "show {{ item }}"
+      with_items: "{{ device_filesystem_list }}"
+
+    #--------------------------------------------------------------------------
+    # Parse data from command output like 'show flash:'
+    #--------------------------------------------------------------------------
+    - name: "{{ section }} | ios_filesystem | Run command 'show <device_filesystem_list item>'"
+      ansible.builtin.set_fact:
+        device_filesystem_info: "{{ commands_output.results | 
+          parse_filesystem_list(
+            True 
+              if (debug_filter is defined and debug_filter) 
+              else False
+          ) }}"
+    
+    #----------------------------------------------------------------------
+    # Print list when debug_all or debug_ios has the boolean True.
+    # device_filesystem_info = 
+    #   {
+    #     'flash:' : 
+    #       {
+    #         'total_kb' : <integer>,
+    #         'free_kb' : <integer>,
+    #       },
+    #   },
+    #----------------------------------------------------------------------
+    - name: "{{ section }} | ios_filesystem | Debug"
+      when: debug_all or debug_ios
+      ansible.builtin.debug: var=device_filesystem_info
+    
+  tags:
+    - facts
+    - cleaning
+    - staging
+    - verifying
+    - booting
+
+
+
+
+

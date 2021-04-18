@@ -1,0 +1,127 @@
+---
+# tasks file for ansible-cisco_ios_upgrade
+#
+# ██╗ ██████╗ ███████╗        ███████╗        ██████╗  ██████╗  ██████╗ ████████╗██╗███╗   ██╗ ██████╗ 
+# ██║██╔═══██╗██╔════╝        ██╔════╝        ██╔══██╗██╔═══██╗██╔═══██╗╚══██╔══╝██║████╗  ██║██╔════╝ 
+# ██║██║   ██║███████╗        ███████╗        ██████╔╝██║   ██║██║   ██║   ██║   ██║██╔██╗ ██║██║  ███╗
+# ██║██║   ██║╚════██║        ╚════██║        ██╔══██╗██║   ██║██║   ██║   ██║   ██║██║╚██╗██║██║   ██║
+# ██║╚██████╔╝███████║███████╗███████║███████╗██████╔╝╚██████╔╝╚██████╔╝   ██║   ██║██║ ╚████║╚██████╔╝
+# ╚═╝ ╚═════╝ ╚══════╝╚══════╝╚══════╝╚══════╝╚═════╝  ╚═════╝  ╚═════╝    ╚═╝   ╚═╝╚═╝  ╚═══╝ ╚═════╝ 
+# 
+
+- name: ios_5_booting | Define section
+  ansible.builtin.set_fact:
+    section: "ios_5_booting"
+  tags:
+    - booting
+
+#------------------------------------------------------------------------------
+# Required IOS image found on device filesystem
+#------------------------------------------------------------------------------
+- name: ios_5_booting
+  when: 
+    - found_required_file
+  block:
+
+    #--------------------------------------------------------------------------
+    # Remove boot variable
+    #--------------------------------------------------------------------------
+    - name: ios_5_booting | Remove Boot Variable
+      cisco.ios.ios_config:
+        commands: "no boot system {{
+          (
+            'switch all' 
+              if (show_switch)
+              else ''
+          ) if (device_version_info|length > 0) 
+            else ''
+        }}"
+
+    #--------------------------------------------------------------------------
+    # Set boot variable
+    #--------------------------------------------------------------------------
+    - name: ios_5_booting | Set Boot Variable to new IOS image
+      register: image_activate
+      cisco.ios.ios_config:
+        commands: "boot system {{
+          ( 
+            'switch all'
+              if (show_switch)
+              else ''
+          ) if (device_product|lower == 'switch') 
+            else ''
+        }} {{ ansible_net_image.split(':')[0] }}:{{ required_ios_binary[:-4] }}/{{ required_ios_binary }}"
+        save_when: always
+
+    #--------------------------------------------------------------------------
+    # Reload device
+    #--------------------------------------------------------------------------
+    - name: ios_5_booting | Reload the Device
+      when: image_activate.changed
+      vars:
+            ansible_command_timeout: 60
+      cisco.ios.ios_command:
+        commands:
+          - command: "reload {{ 
+                (
+                  'in ' + ( reload_in|string )
+                ) if(reload_in is defined and reload_in > 0)
+                  else ''
+              }}\n"
+            prompt: Proceed with reload?
+            answer: "\n"
+
+    #--------------------------------------------------------------------------
+    # Reset connection
+    #--------------------------------------------------------------------------
+    - name: ios_5_booting | Reset the persitent SSH connection
+      meta: reset_connection
+
+    #--------------------------------------------------------------------------
+    # Wait for device
+    #--------------------------------------------------------------------------
+    - name: ios_5_booting | Wait for device to come back online
+      wait_for:
+         host: "{{ ansible_host }}"
+         port: 22
+         timeout: 1800
+         delay: "{{ 
+            (
+              (
+                (
+                  900 + ((reload_in|int) * 60)
+                ) if(reload_in is defined and reload_in > 0)
+                  else 900
+              )
+                if (show_switch)
+                else 
+                (
+                  (
+                    600 + ((reload_in|int) * 60)
+                  ) if(reload_in is defined and reload_in > 0)
+                  else 600          
+                )
+            ) if (device_product|lower == 'switch')
+              else (
+                (
+                  600 + ((reload_in|int) * 60)
+                ) if(reload_in is defined and reload_in > 0)
+                else 600
+              )
+         }}"
+      delegate_to: localhost
+
+    - name: ios_5_booting | Gathering Facts
+      ansible.builtin.ios_facts:
+        gather_subset: hardware
+  
+    - name: ios_5_booting | Assert that the IOS version is correct
+      ansible.builtin.assert:
+        that:
+          - required_ios_version == ansible_net_version
+        fail_msg: "Software Upgrade failed. The running IOS version is {{ ansible_net_version }}, not {{ required_ios_version }}"
+        success_msg: "Software Upgrade has been completed"
+
+  tags:
+    - booting
+
