@@ -163,11 +163,11 @@ ansible-playbook your_playbook_name.yml -i your_inventory_file --tag cleaning -e
 Using the attribute tag 'staging' to upload the IOS image from the Ansible Controller to a specific remote device.
 If the mode operation 'facts' detect that the IOS image already exist then it stops after the operation 'facts'.
 ```
-ansible-playbook your_playbook_name.yml -i your_inventory_file --tag staging -e "data_transfer=upload" --limit inventory_hostname
+ansible-playbook your_playbook_name.yml -i your_inventory_file --tag staging \
+    -e "data_transfer=upload" --limit inventory_hostname
 ```
 
 
-ansible-playbook your_playbook_name.yml -i your_inventory_file --tag staging -e "data_transfer=upload" --limit inventory_hostname
 
 
 License
