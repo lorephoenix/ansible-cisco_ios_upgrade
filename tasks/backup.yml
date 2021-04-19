@@ -9,14 +9,8 @@
 # ╚═════╝ ╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝ ╚═════╝ ╚═╝     
 # 
 - name: backup
-  when: backup == True
+  when: backup
   block:
-
-    - name: backup | Set variable when using tag 'backup'
-      ansible.builtin.set_fact:
-        ios_next_step: facts
-      tags:
-        - backup
 
     #--------------------------------------------------------------------------
     # Whenever you make changes to the RPM configuration, you must save the 
@@ -147,3 +141,11 @@
   tags:
     - backup
 
+#--------------------------------------------------------------------------
+# Define the next step
+#--------------------------------------------------------------------------
+- name: backup | Next step
+  when:
+    - not using_tag
+  ansible.builtin.set_fact:
+    ios_next_step: "facts"

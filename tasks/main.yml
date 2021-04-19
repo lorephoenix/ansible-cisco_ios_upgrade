@@ -20,14 +20,6 @@
     - verifying
     - booting
 
-#------------------------------------------------------------------------------
-# Load the task if the device to backup device configuration.
-#------------------------------------------------------------------------------
-- include: 'backup.yml'
-  when:
-    - backup
-
-
 - name: main | Set variable when using tag 'booting'
   ansible.builtin.set_fact:
     ios_next_step: booting
@@ -63,11 +55,22 @@
   tags: 
     - facts
 
+- name: main | Set variable when using tag 'backup'
+  ansible.builtin.set_fact:
+    ios_next_step: backup
+    using_tag: True
+  tags: 
+    - backup
+
 - name: main | Set variable when not using any tag'
   ansible.builtin.set_fact:
     ios_next_step: facts
     using_tag: False
   
+#------------------------------------------------------------------------------
+# Load the task if the device to backup device configuration.
+#------------------------------------------------------------------------------
+- include: 'backup.yml'
 
 #------------------------------------------------------------------------------
 # Gathering additional facts from remote device
