@@ -43,8 +43,8 @@ data_transfer: upload
 # -----------------------------------------------------------------------------
 # Debug mode
 # -----------------------------------------------------------------------------
-debug: True
-debug_filter: True
+debug: False
+debug_filter: False
 
 # -----------------------------------------------------------------------------
 # Delayed time (in minutes) to reboot the network device.

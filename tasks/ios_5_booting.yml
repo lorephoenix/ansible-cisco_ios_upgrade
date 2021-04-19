@@ -65,7 +65,7 @@
           - command: "reload {{ 
                 (
                   'in ' + ( reload_in|string )
-                ) if(reload_in is defined and reload_in > 0)
+                ) if(reload_in is defined and reload_in|string != '0')
                   else ''
               }}\n"
             prompt: Proceed with reload?
@@ -90,7 +90,7 @@
               (
                 (
                   900 + ((reload_in|int) * 60)
-                ) if(reload_in is defined and reload_in > 0)
+                ) if(reload_in is defined and reload_in|string != '0' )
                   else 900
               )
                 if (show_switch)
@@ -98,14 +98,14 @@
                 (
                   (
                     600 + ((reload_in|int) * 60)
-                  ) if(reload_in is defined and reload_in > 0)
+                  ) if(reload_in is defined and reload_in|string != '0' )
                   else 600          
                 )
             ) if (device_product|lower == 'switch')
               else (
                 (
                   600 + ((reload_in|int) * 60)
-                ) if(reload_in is defined and reload_in > 0)
+                ) if(reload_in is defined and reload_in|string != '0' )
                 else 600
               )
          }}"

@@ -56,101 +56,18 @@ class Verbosity:
         print(self.__red + '[ERROR] ' + self.__reset + message)
 
 
-# ███╗    ███████╗    ███╗
-# ██╔╝    ██╔════╝    ╚██║
-# ██║     █████╗       ██║
-# ██║     ██╔══╝       ██║
-# ███╗    ██║         ███║
-# ╚══╝    ╚═╝         ╚══╝
-
-
-def find_filesystems(data, version_list, default_fs, debug=False):
-    ''' find_filesystems
-        Build a dictionary of Cisco exisiting upgrade commands that can be
-        used.
-
-        Args:
-            data: contains the output from exec command 'show ?'
-            version_list: a list of possible switch memmbers
-            default_fs
-            debug: passing Boolean to enable/disable debug
-        '''
-    dp = Verbosity()
-    filesystems = []  # Initialize empty list
-    extract = default_fs.split(':')[0]
-
-    if debug:
-        dp.v_debug("Start of def find_filesystems()")
-    # End of if debug:
-
-    [error, raw_list] = stdout(data, 'find_filesystems')
-
-    if len(version_list) == 0:
-        # From previous task a 'show version' will not generate any data for
-        # router devices.
-        filesystems.append(default_fs)
-    # End of if len(version_list) == 0:
-
-    elif len(version_list) == 1:
-        # From previous task a 'show version' on standalone switch will contain
-        # only 1 element on the version_list.
-        filesystems.append(default_fs)
-    # End of elif len(version_list) == 1:
-
-    else:
-        for item in version_list:
-            if 'Switch' in item:
-                # Found key 'Switch' on dict
-
-                for line in raw_list:
-                    line = line.strip()  # Remove leading and trailing spaces
-
-                    string1 = extract + '-' + item['Switch'] + ':'
-                    string2 = extract + item['Switch'] + ':'
-                    cond1 = re.match('^(' + re.escape(string1) + ')\\s+', line)
-                    cond2 = re.match(
-                        '^(' + re.escape(string2) + ':)\\s+', line)
-
-                    if cond1:
-                        filesystems.append(string1)
-                        if debug:
-                            dp.v_debug("Found line: " + line)
-                        # End of if debug:
-                    # End of if cond1:
-
-                    if cond2:
-                        filesystems.append(string2)
-                        if debug:
-                            dp.v_debug("Found line: " + line)
-                        # End of if debug:
-                    # End of if cond2:
-                # End of for line in raw_list:
-            # End of if 'Switch' in item:
-        # End of for item in version_list:
-    # End of else:
-
-    if debug:
-        dp.v_debug("End of def find_filesystems()")
-    # End of if debug:
-
-    return filesystems
-
-
-# ███╗    ██╗    ███╗
-# ██╔╝    ██║    ╚██║
-# ██║     ██║     ██║
-# ██║     ██║     ██║
-# ███╗    ██║    ███║
-# ╚══╝    ╚═╝    ╚══╝
-
-
-# ███╗    ██████╗     ███╗
-# ██╔╝    ██╔══██╗    ╚██║
-# ██║     ██████╔╝     ██║
-# ██║     ██╔═══╝      ██║
-# ███╗    ██║         ███║
-# ╚══╝    ╚═╝         ╚══╝
-
+# ███████╗██╗██╗  ████████╗███████╗██████╗
+# ██╔════╝██║██║  ╚══██╔══╝██╔════╝██╔══██╗
+# █████╗  ██║██║     ██║   █████╗  ██████╔╝
+# ██╔══╝  ██║██║     ██║   ██╔══╝  ██╔══██╗
+# ██║     ██║███████╗██║   ███████╗██║  ██║
+# ╚═╝     ╚═╝╚══════╝╚═╝   ╚══════╝╚═╝  ╚═╝
+#     ███╗   ███╗ ██████╗ ██████╗ ██╗   ██╗██╗     ███████╗
+#     ████╗ ████║██╔═══██╗██╔══██╗██║   ██║██║     ██╔════╝
+#     ██╔████╔██║██║   ██║██║  ██║██║   ██║██║     █████╗
+#     ██║╚██╔╝██║██║   ██║██║  ██║██║   ██║██║     ██╔══╝
+#     ██║ ╚═╝ ██║╚██████╔╝██████╔╝╚██████╔╝███████╗███████╗
+#     ╚═╝     ╚═╝ ╚═════╝ ╚═════╝  ╚═════╝ ╚══════╝╚══════╝
 
 class FilterModule(object):
 
@@ -169,14 +86,6 @@ class FilterModule(object):
             'parse_filesystem_list': self.parse_filesystem_list,
             'parse_show_switch': self.parse_show_switch,
             'parse_show_version': self.parse_show_version,
-
-            'find_filesystems': find_filesystems,
-
-
-
-
-
-
         }
 
     # -------------------------------------------------------------------------

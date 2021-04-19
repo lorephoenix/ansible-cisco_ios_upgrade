@@ -122,7 +122,7 @@ Below variables are required when the variable "data_transfer", which is stored 
 Modes of Operation
 ------------
 
-The role has 6 distinct modes of operation:
+The role has 6 distinct modes of operation following the same order as below:
 
 * **backup**: Make running configuration backup from the remote device.
 * **facts**: Just gather facts about the remote device and compare against the version it should be running
@@ -138,18 +138,37 @@ Example Playbook
 This is an example playbook:
 ```
     - hosts: cisco
-      gatther_fact: no
+      gather_fact: no
       roles:
          - cisco_ios_upgrade
 ```
 
 To run a specific mode, simply specify the mode by using the tag attribute.
 
-The backup mode will copy the running configuration 
-The cleaning mode will remove unused software when the current running software isn't the required software. It also doesn't remove the required software when available on the device filesystem.
+Using attribute tag 'backup' will only backup of the running configuration but it requires to enable the default variable 'backup'.
 ```
-ansible-playbook your_playbook_name.yml -i your_inventory_file --tag cleaning
+ansible-playbook your_playbook_name.yml -i your_inventory_file --tag backup -e "backup=yes"
 ```
+
+Using attribute tag 'facts' will only gather device information.
+```
+ansible-playbook your_playbook_name.yml -i your_inventory_file --tag facts
+```
+
+Using the attribute tag 'cleaning' will only process the operation mode 'facts' and 'cleaning' in that same order.
+```
+ansible-playbook your_playbook_name.yml -i your_inventory_file --tag cleaning -e "cleaning=yes"
+```
+
+Using the attribute tag 'staging' to upload the IOS image from the Ansible Controller to a specific remote device.
+If the mode operation 'facts' detect that the IOS image already exist then it stops after the operation 'facts'.
+```
+ansible-playbook your_playbook_name.yml -i your_inventory_file --tag staging -e "data_transfer=upload" --limit inventory_hostname
+```
+
+
+ansible-playbook your_playbook_name.yml -i your_inventory_file --tag staging -e "data_transfer=upload" --limit inventory_hostname
+
 
 License
 -------
