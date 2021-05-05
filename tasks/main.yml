@@ -10,7 +10,7 @@
 #
 
 - name: main | Gathering Facts
-  ansible.builtin.ios_facts:
+  cisco.ios.ios_facts:
     gather_subset: hardware
   tags:
     - backup
