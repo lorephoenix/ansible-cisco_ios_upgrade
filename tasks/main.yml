@@ -20,6 +20,20 @@
     - verifying
     - booting
 
+- name: main | Asserts
+  ansible.builtin.assert:
+    that:
+       - ansible_net_iostype|upper == "IOS"
+    fail_msg: "{{ inventory_hostname }} isn't running the software type IOS but running {{ ansible_net_iostype|upper }}"
+    quiet: true
+  tags:
+    - backup
+    - facts
+    - cleaning
+    - staging
+    - verifying
+    - booting
+
 - name: main | Set variable when using tag 'booting'
   ansible.builtin.set_fact:
     ios_next_step: booting
