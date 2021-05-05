@@ -56,8 +56,6 @@ Below variables will enable or disable to display the debug variables.
 ```
     debug_all: <Boolean>
     debug_filter: <Boolean>
-    debug_ios: <Boolean>
-    debug_iosxe: <Boolean>
 ```
 
 #### 2. vars/\<ansible_net_iostype\>/\<model_variant\>/\<model_variant\>.yml
