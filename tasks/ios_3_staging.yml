@@ -102,7 +102,7 @@
             ansible_command_timeout: 3600
           cisco.ios.ios_command:
             commands:
-              - command: copy scp://{{ remote_ssh_user }}:{{ remote_ssh_password }}@{{remote_ssh_servers | random }}/{{ required_ios_binary }} {{ filesystem }}/{{ required_ios_binary[:-4] }}/{{ required_ios_binary }}
+              - command: copy {{ data_protocol }}://{{ remote_ssh_user }}:{{ remote_ssh_password }}@{{remote_ssh_servers | random }}/{{ required_ios_binary }} {{ filesystem }}/{{ required_ios_binary[:-4] }}/{{ required_ios_binary }}
                 prompt: 'Destination filename \[/{{ required_ios_binary[:-4] }}/{{ required_ios_binary }}\]?'
                 answer: "\r"
           loop_control:
@@ -139,7 +139,7 @@
             ansible_command_timeout: 3600
           ansible.netcommon.net_put:
             src: 'files/{{ model_variant }}/{{ required_ios_binary }}'
-            protocol: '{{ data-protocol }}'
+            protocol: '{{ data_protocol }}'
             dest: '{{ filesystem }}{{ required_ios_binary[:-4] }}/{{ required_ios_binary }}'
           loop_control:
             loop_var: filesystem
