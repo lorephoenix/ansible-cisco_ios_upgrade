@@ -14,7 +14,6 @@ model_supported: True
 # Compliant IOS items
 #------------------------------------------------------------------------------
 required_ios_binary: c3750-ipservicesk9-mz.122-55.SE12.bin
-required_ios_tar: c3750-ipservicesk9-tar.122-55.SE12.tar
 required_ios_md5: b28cf0ed5cc0d1928ea4f6656e1c8dde
 required_ios_sha512: d9300f6b9e25bd048784be6dda05ebcc9d5755b2bc99a74235622c48d084dd394e089ca57d0290cbca6a2c0c5af9e2108cdc93e13c0067b567d8a1a41f4b37c6
 required_ios_size_kb: 13014
