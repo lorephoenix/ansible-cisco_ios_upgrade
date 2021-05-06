@@ -66,7 +66,6 @@ Inside each sub-directory contains a filename with the same model variant string
 
 * `model_supported`: Flag if the model is supported or not.
 * `required_ios_binary`: Specify the binary image filename.
-* `required_ios_tar`: Specify the compressed image filename.
 * `required_ios_md5`: MD5 checksum value for the image.
 * `required_ios_sha512`: SHA512 checksum value for the image.
 * `required_ios_version`: Specify the image version number.
@@ -76,7 +75,6 @@ Inside each sub-directory contains a filename with the same model variant string
 ```
     model_supported: <Boolean>
     required_ios_binary: <String>
-    required_ios_tar: <String>
     required_ios_md5: <String>
     required_ios_sha512: <String>
     required_ios_size_kb: <Integer>
