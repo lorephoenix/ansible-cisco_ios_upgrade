@@ -40,7 +40,9 @@ configuration to a specific path on the Ansible Controller.
 
 * `booting`: Enable or disable the function to update the boot variable.
 * `cleaning`: Enable or disable the function to do some cleanup on unused images.
-* `data_transfer`: Only options are "download" or "upload". Download initiates the Cisco command "copy" on the remote network device to copy the image (using protocol scp) from a SSH server. With upload it push the image from the Ansible controller to the remote device.
+* `data_transfer`: Only options are "download" or "upload". Download initiates the Cisco command "copy" on the remote network device to copy the image from a server. With upload it push the image from the Ansible controller to the remote device.
+* `data_protocol`: Specify a network protocol.
+* `data_upload_path`: Specify the location where the binary files are located.
 * `reload_in`: Define the delayed time to reboot the network device.
   If the value is 0 then the reload will be initiated immediately.
 * `remote_ssh_servers`: Specify a list of hostnames/IP addresses to get the images from.
@@ -48,6 +50,8 @@ configuration to a specific path on the Ansible Controller.
     booting: <Boolean>
     cleaning: <Boolean>
     data_transfer: <String>
+    data_protocol: <String>
+    data_upload_path: <String>
     reload_in: <Integer>
     remote_ssh_servers: <List>
 ```
