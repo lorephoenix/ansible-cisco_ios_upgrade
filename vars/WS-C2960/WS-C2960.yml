@@ -14,7 +14,6 @@ model_supported: True
 # Compliant IOS items
 #------------------------------------------------------------------------------
 required_ios_binary: c2960-lanbasek9-mz.122-55.SE13.bin
-required_ios_tar:
 required_ios_md5: c63575973e63a69a3e36d746695d96cc
 required_ios_sha512: 
 required_ios_size_kb: 9827
