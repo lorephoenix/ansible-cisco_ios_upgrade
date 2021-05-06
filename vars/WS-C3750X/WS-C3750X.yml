@@ -14,7 +14,6 @@ model_supported: True
 # Compliant IOS items
 #------------------------------------------------------------------------------
 required_ios_binary: c3750e-universalk9-mz.152-4.E10.bin
-required_ios_tar: c3750e-universalk9-tar.152-4.E10.tar
 required_ios_md5: 6f3b3ddec62c77747c214cc7be555ec4
 required_ios_sha512: e447b64a239207f3ba3afeeee19f70658e5f529ab9924275928434920b9beb4e0bab706339ec4ea2a18deaac43407ec31486a094c8d8c520aa8fb2626b7f3391
 required_ios_size_kb: 25550
