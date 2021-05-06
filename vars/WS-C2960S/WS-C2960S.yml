@@ -14,7 +14,6 @@ model_supported: True
 # Compliant IOS items
 #------------------------------------------------------------------------------
 required_ios_binary: c2960s-universalk9-mz.152-2.E9.bin
-required_ios_tar: c2960s-universalk9-tar.152-2.E9.tar
 required_ios_md5: ea604d030b378b6c5c3dda3d501ac2f5
 required_ios_sha512: 602990895ac22b213988495d48856e368eb74a36d0a6961df9b64c2f672f1b0370c73a039214455f13fd48696e47256ccd8e07d13a4e67b82f2da4bc83cf0255
 required_ios_size_kb: 16801
