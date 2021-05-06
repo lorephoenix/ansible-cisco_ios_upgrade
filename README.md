@@ -99,7 +99,7 @@ You can store variables in the main inventory file or storing separate host and 
     ansible_become_method: enable
     ansible_become_password: <Vault String>
     ansible_connection: ansible.netcommon.network_cli
-    ansible_network_os: ios
+    ansible_network_os: cisco.ios.ios
     ansible_user: <String>
     ansible_password: <Vault String>
 ```
