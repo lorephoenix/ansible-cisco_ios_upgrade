@@ -138,7 +138,7 @@
           vars:
             ansible_command_timeout: 3600
           ansible.netcommon.net_put:
-            src: 'files/{{ model_variant }}/{{ required_ios_binary }}'
+            src: '{{ data_upload_path }}/{{ required_ios_binary }}'
             protocol: '{{ data_protocol }}'
             dest: '{{ filesystem }}{{ required_ios_binary[:-4] }}/{{ required_ios_binary }}'
           loop_control:
