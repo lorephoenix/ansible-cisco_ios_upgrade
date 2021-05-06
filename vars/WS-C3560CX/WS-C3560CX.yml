@@ -14,7 +14,6 @@ model_supported: True
 # Compliant IOS items
 #------------------------------------------------------------------------------
 required_ios_binary: c3560cx-universalk9-mz.152-7.E3.bin
-required_ios_tar: c3560cx-universalk9-tar.152-7.E3.tar
 required_ios_md5: 14a1fc2dc444990eade8d342c96fc466
 required_ios_sha512: 23a53a43d678fadd0175f90918b77c17192968f2f5036e773e49c8bb69a8b7c9282b60adc2d2ad10d1391296f69aadd6772dd237e80c30cd44aed9e2e397a002
 required_ios_size_kb: 22919
