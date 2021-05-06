@@ -39,6 +39,8 @@ cleaning: True
 #   upload: Copy file from Ansible Controller to network device
 # -----------------------------------------------------------------------------
 data_transfer: upload
+data_protocol: scp
+data_upload_path: /opt/install/scp_share
 
 # -----------------------------------------------------------------------------
 # Debug mode
