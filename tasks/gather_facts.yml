@@ -1,0 +1,70 @@
+---
+
+- name: gather_facts
+  block:
+  
+    #--------------------------------------------------------------------------
+    # Run Cisco exec command 'show version'
+    #--------------------------------------------------------------------------
+    - name: gather_facts | Run 'show version'
+      register: commands_output
+      cisco.ios.ios_command:
+        commands:
+          - show version
+
+    #--------------------------------------------------------------------------
+    # Parse data from command 'show version' to build the variable 
+    # 'ansible_net_model'.
+    #--------------------------------------------------------------------------
+    - name: gather_facts | Build 'ansible_net_model'
+      ansible.builtin.set_fact:
+        ansible_net_model: "{{ commands_output.stdout[0] | parse_model(
+          True
+            if (debug_filter is defined and debug_filter)
+            else False
+        ) }}"
+
+    #--------------------------------------------------------------------------
+    # Parse data from command 'show version' to build the variable 
+    # 'ansible_net_version'.
+    #--------------------------------------------------------------------------
+    - name: gather_facts | Build 'ansible_net_version'
+      ansible.builtin.set_fact:
+        ansible_net_version: "{{ commands_output.stdout[0] | parse_version(
+          True
+            if (debug_filter is defined and debug_filter)
+            else False
+        ) }}"
+
+    #--------------------------------------------------------------------------
+    # Parse data from command 'show version' to build the variable 
+    # 'ansible_net_iostype'.
+    #--------------------------------------------------------------------------
+    - name: gather_facts | Build 'ansible_net_iostype'
+      ansible.builtin.set_fact:
+        ansible_net_version: "{{ commands_output.stdout[0] | parse_iostype(
+          True
+            if (debug_filter is defined and debug_filter)
+            else False
+        ) }}"
+  
+    #--------------------------------------------------------------------------
+    # Parse data from command 'show version' to build the variable 
+    # 'ansible_net_iostype'.
+    #--------------------------------------------------------------------------
+    - name: gather_facts | Build 'ansible_net_image'
+      ansible.builtin.set_fact:
+        ansible_net_image: "{{ commands_output.stdout[0] | parse_image(
+          True
+            if (debug_filter is defined and debug_filter)
+            else False
+        ) }}"
+
+  tags:
+    - backup
+    - facts
+    - cleaning
+    - staging
+    - verifying
+    - installing
+    - booting

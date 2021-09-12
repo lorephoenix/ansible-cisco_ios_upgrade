@@ -1,0 +1,162 @@
+---
+# tasks file for ansible-cisco_iosxe_upgrade
+#
+# ██╗ ██████╗ ███████╗     ██╗  ██╗███████╗        ██████╗         ███████╗████████╗ █████╗  ██████╗ ██╗███╗   ██╗ ██████╗ 
+# ██║██╔═══██╗██╔════╝     ╚██╗██╔╝██╔════╝        ╚════██╗        ██╔════╝╚══██╔══╝██╔══██╗██╔════╝ ██║████╗  ██║██╔════╝ 
+# ██║██║   ██║███████╗█████╗╚███╔╝ █████╗           █████╔╝        ███████╗   ██║   ███████║██║  ███╗██║██╔██╗ ██║██║  ███╗
+# ██║██║   ██║╚════██║╚════╝██╔██╗ ██╔══╝           ╚═══██╗        ╚════██║   ██║   ██╔══██║██║   ██║██║██║╚██╗██║██║   ██║
+# ██║╚██████╔╝███████║     ██╔╝ ██╗███████╗███████╗██████╔╝███████╗███████║   ██║   ██║  ██║╚██████╔╝██║██║ ╚████║╚██████╔╝
+# ╚═╝ ╚═════╝ ╚══════╝     ╚═╝  ╚═╝╚══════╝╚══════╝╚═════╝ ╚══════╝╚══════╝   ╚═╝   ╚═╝  ╚═╝ ╚═════╝ ╚═╝╚═╝  ╚═══╝ ╚═════╝ 
+# 
+- name: ios-xe_3_staging | Define section
+  ansible.builtin.set_fact:
+    section: "ios-xe_3_staging"
+
+- name: ios-xe_3_staging
+  when: 
+    - not found_required_file
+  block:
+
+    #--------------------------------------------------------------------------
+    # Foreach required filesystem to check if there is enough space to add
+    # the required IOS-XE image.
+    #--------------------------------------------------------------------------
+    - name: "{{ section }} | Enough space on filesystem?"
+      ansible.builtin.assert:
+        that:
+          - "device_filesystem_info[item]['free_kb'] > required_ios_size_kb"
+        fail_msg: "Not enough space left to store the required IOS-XE image"
+      with_items: "{{ device_filesystem_info.keys() | list }}"
+
+    #--------------------------------------------------------------------------
+    # Determine how to get the latest image on the device.
+    #--------------------------------------------------------------------------
+    - name: "{{ section }} | Data download or upload"
+      ansible.builtin.set_fact:
+        data_transfer: "{{ 
+              ( 'download'
+                  if (data_transfer|lower == 'download' )
+                  else 'upload'
+              )
+                if (data_transfer is defined)
+                else 'upload'
+          }}"
+
+    #--------------------------------------------------------------------------
+    # example:
+    # data_transfer = "upload"
+    #--------------------------------------------------------------------------
+    - name: "{{ section }} | Debug"
+      when: debug
+      ansible.builtin.debug: var=data_transfer                                                                                                                     
+  
+    #--------------------------------------------------------------------------
+    # Data_transfer is set as download.
+    #--------------------------------------------------------------------------
+    - name: "{{ section }} | download"
+      when: data_transfer|lower  == "download"
+      block:
+
+        #----------------------------------------------------------------------
+        # Download IOS image from a specific remote SSH server requires to have 
+        # the following variables:
+        #   - remote_scp_server
+        #   - remote_scp_user
+        #   - remote_scp_password
+        #----------------------------------------------------------------------
+        - name: "{{ section }} | download | Verify remote variables"
+          ansible.builtin.assert:
+            that:
+              - remote_ssh_servers is defined
+              - remote_ssh_user is defined
+              - remote_ssh_password is defined
+            msg: "data_transfer is set for download image from remote SSH 
+                  server that requires the following variables: 
+                  [ 'remote_ssh_password', 'remote_ssh_servers',
+                  'remote_ssh_user' ]"
+
+        #----------------------------------------------------------------------
+        # copy scp: flash:/<image_name>
+        #----------------------------------------------------------------------
+        - name: "{{ section }} | download | Copy file from remote SSH server to network device"
+          vars:
+            ansible_command_timeout: 84600
+          cisco.ios.ios_command:
+            commands:
+            - command: copy {{ data_protocol }}://{{ remote_ssh_user }}:{{ remote_ssh_password }}@{{remote_ssh_servers | random }}/{{ required_ios_binary }} {{ device_filesystem }}:{{ required_ios_binary }}
+              prompt: 'Destination filename \[{{ required_ios_binary }}\]?'
+              answer: "\r"
+
+    #--------------------------------------------------------------------------
+    # Data_transfer is set as upload.
+    #--------------------------------------------------------------------------
+    - name:  "{{ section }} | upload"
+      when: data_transfer|lower  == "upload"
+      block:
+
+        #----------------------------------------------------------------------
+        # Upload the IOS image from Ansible Controller
+        #----------------------------------------------------------------------
+        - name: "{{ section }} | upload |  Copy file from Ansible Controller to network device"
+          vars:
+            ansible_command_timeout: 86400
+          ansible.netcommon.net_put:
+            src: '{{ data_upload_path }}/{{ required_ios_binary }}'
+            protocol: '{{ data_protocol }}'
+            dest: '{{ device_filesystem }}:{{ required_ios_binary }}'
+
+    #    __ _           _  _     _       
+    #   / _(_)_ __   __| || |__ (_)_ __  
+    #  | |_| | '_ \ / _` || '_ \| | '_ \ 
+    #  |  _| | | | | (_| || |_) | | | | |
+    #  |_| |_|_| |_|\__,_||_.__/|_|_| |_|
+    #
+    #--------------------------------------------------------------------------
+    # Check if binary file already exist on active filesystem
+    #--------------------------------------------------------------------------
+    - ansible.builtin.include: "facts/{{ ansible_net_iostype|lower}}_findbin.yml"
+
+#------------------------------------------------------------------------------
+# Define the next step
+#------------------------------------------------------------------------------
+- name: "{{ section }} | Next step"
+  ansible.builtin.set_fact:
+    ios_next_step: "verifying"
+
+#                       _ _   
+#   _ __ ___  ___ _   _| | |_ 
+#  | '__/ _ \/ __| | | | | __|
+#  | | |  __/\__ \ |_| | | |_ 
+#  |_|  \___||___/\__,_|_|\__|
+#
+#------------------------------------------------------------------------------
+# Display result status
+#------------------------------------------------------------------------------
+- name: "{{ section }} | Results"
+  ansible.builtin.debug:
+    msg:
+      - "{{ 'Required IOS-XE image found on filesystem.' 
+            if ( found_required_file )
+            else 
+              (
+                'Unable to find the IOS-XE image on device filesystem.'
+              )
+        }}"
+      - "{{
+          (
+            'Next step is ' + ios_next_step
+          ) if
+            (
+              not using_tag
+            ) 
+          else 
+            (
+              (
+                'Ending of tag staging.'
+              ) if 
+                  (
+                    ios_next_step|lower == 'staging'
+                  )
+                else ( 'Next step is ' + ios_next_step )
+            )
+        }}"

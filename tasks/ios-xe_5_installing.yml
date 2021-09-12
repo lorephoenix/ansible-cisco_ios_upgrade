@@ -1,0 +1,93 @@
+---
+# tasks file for ansible-cisco_iosxe_upgrade
+#
+# ██╗ ██████╗ ███████╗     ██╗  ██╗███████╗        ███████╗        ██╗███╗   ██╗███████╗████████╗ █████╗ ██╗     ██╗     ██╗███╗   ██╗ ██████╗ 
+# ██║██╔═══██╗██╔════╝     ╚██╗██╔╝██╔════╝        ██╔════╝        ██║████╗  ██║██╔════╝╚══██╔══╝██╔══██╗██║     ██║     ██║████╗  ██║██╔════╝ 
+# ██║██║   ██║███████╗█████╗╚███╔╝ █████╗          ███████╗        ██║██╔██╗ ██║███████╗   ██║   ███████║██║     ██║     ██║██╔██╗ ██║██║  ███╗
+# ██║██║   ██║╚════██║╚════╝██╔██╗ ██╔══╝          ╚════██║        ██║██║╚██╗██║╚════██║   ██║   ██╔══██║██║     ██║     ██║██║╚██╗██║██║   ██║
+# ██║╚██████╔╝███████║     ██╔╝ ██╗███████╗███████╗███████║███████╗██║██║ ╚████║███████║   ██║   ██║  ██║███████╗███████╗██║██║ ╚████║╚██████╔╝
+# ╚═╝ ╚═════╝ ╚══════╝     ╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝╚══════╝╚═╝╚═╝  ╚═══╝╚══════╝   ╚═╝   ╚═╝  ╚═╝╚══════╝╚══════╝╚═╝╚═╝  ╚═══╝ ╚═════╝ 
+                                                                                                                                           
+- name: ios-xe_5_installing | Define section
+  ansible.builtin.set_fact:
+    section: "ios-xe_5_installing"
+
+#------------------------------------------------------------------------------
+# Image exist on device filesystem
+#------------------------------------------------------------------------------
+- name: "{{ section }} | IOS image found"
+  ansible.builtin.assert:
+    that:
+      - found_required_file
+    fail_msg: "The required IOS-XE image couldn't be found on device filesystem."
+    success_msg: "The required IOS-XE image exist on device filesystem."
+
+#   _           _        _ _ 
+#  (_)_ __  ___| |_ __ _| | |
+#  | | '_ \/ __| __/ _` | | |
+#  | | | | \__ \ || (_| | | |
+#  |_|_| |_|___/\__\__,_|_|_|
+#                            
+#----------------------------------------------------------------------------
+# MODE INSTALL
+#----------------------------------------------------------------------------
+- name: "{{ section }} | MODE INSTALL"
+  when:
+    - found_required_file
+    - required_ios_version != ansible_net_version
+    - device_install_mode|lower == "install"
+  block:
+
+    #   _           _        _ _ 
+    #  (_)_ __  ___| |_ __ _| | |
+    #  | | '_ \/ __| __/ _` | | |
+    #  | | | | \__ \ || (_| | | |
+    #  |_|_| |_|___/\__\__,_|_|_|
+    #                            
+    - name: "{{ section }} | MODE INSTALL | command 'install'"
+      when: device_install_cmd|lower == "install"
+      block:
+        
+        #------------------------------------------------------------------
+        # Run command to show the available inactive package information
+        #------------------------------------------------------------------
+        - name: "{{ section }} | MODE INSTALL | command 'install' | Add image using 'install add file'"
+          vars:
+            ansible_command_timeout: 1800
+          register: command_results
+          cisco.ios.ios_command:
+            commands:
+              - command: "install add file {{ item }}{{ device_findfile_info[item]['filename'] }}"
+                prompt: proceed
+                answer: n
+          with_items: "{{ device_findfile_info.keys() | list }}"
+
+        #  _                  _   _           
+        # (_)_ __   __ _  ___| |_(_)_   _____ 
+        # | | '_ \ / _` |/ __| __| \ \ / / _ \
+        # | | | | | (_| | (__| |_| |\ V /  __/
+        # |_|_| |_|\__,_|\___|\__|_| \_/ \___|
+        #                               
+        #----------------------------------------------------------------------
+        # Build device_package_inactive
+        #----------------------------------------------------------------------
+        - ansible.builtin.include_tasks:
+            file: "facts/{{ ansible_net_iostype|lower}}_inactive.yml"
+            apply:
+              tags:      
+                - installing
+      
+        - name: "{{ section }} | MODE INSTALL | command 'install' | Inactive package version {{ required_ios_version }}"
+          ansible.builtin.assert:
+            that:
+              - device_package_inactive
+            fail_msg: "The required IOS-XE version not found under 'show install inactive'"
+            quiet: true
+      
+
+#------------------------------------------------------------------------------
+# Define the next step
+#------------------------------------------------------------------------------
+- name: "{{ section }} | Next step"
+  ansible.builtin.set_fact:
+    ios_next_step: "booting"

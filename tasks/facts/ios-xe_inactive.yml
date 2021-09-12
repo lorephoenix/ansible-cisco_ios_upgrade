@@ -1,0 +1,72 @@
+---
+# tasks file for ansible-cisco_iosxe_upgrade
+#
+# ██╗ ██████╗ ███████╗     ██╗  ██╗███████╗        ██╗███╗   ██╗ █████╗  ██████╗████████╗██╗██╗   ██╗███████╗
+# ██║██╔═══██╗██╔════╝     ╚██╗██╔╝██╔════╝        ██║████╗  ██║██╔══██╗██╔════╝╚══██╔══╝██║██║   ██║██╔════╝
+# ██║██║   ██║███████╗█████╗╚███╔╝ █████╗          ██║██╔██╗ ██║███████║██║        ██║   ██║██║   ██║█████╗  
+# ██║██║   ██║╚════██║╚════╝██╔██╗ ██╔══╝          ██║██║╚██╗██║██╔══██║██║        ██║   ██║╚██╗ ██╔╝██╔══╝  
+# ██║╚██████╔╝███████║     ██╔╝ ██╗███████╗███████╗██║██║ ╚████║██║  ██║╚██████╗   ██║   ██║ ╚████╔╝ ███████╗
+# ╚═╝ ╚═════╝ ╚══════╝     ╚═╝  ╚═╝╚══════╝╚══════╝╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝ ╚═════╝   ╚═╝   ╚═╝  ╚═══╝  ╚══════╝
+#
+- name: ios-xe_inactive
+  block:
+
+    #   _           _        _ _ 
+    #  (_)_ __  ___| |_ __ _| | |
+    #  | | '_ \/ __| __/ _` | | |
+    #  | | | | \__ \ || (_| | | |
+    #  |_|_| |_|___/\__\__,_|_|_|
+    #                            
+    #--------------------------------------------------------------------------
+    # MODE INSTALL
+    #--------------------------------------------------------------------------
+    - name: "{{ section }} | facts | ios-xe_inactive | MODE INSTALL"
+      when:
+        - device_install_mode is defined
+        - device_install_mode|upper == "INSTALL"
+      block:
+      
+        #   _           _        _ _ 
+        #  (_)_ __  ___| |_ __ _| | |
+        #  | | '_ \/ __| __/ _` | | |
+        #  | | | | \__ \ || (_| | | |
+        #  |_|_| |_|___/\__\__,_|_|_|
+        #                            
+        - name: "{{ section }} | facts | ios-xe_inactive | MODE INSTALL | command 'install'"
+          when: device_install_cmd|lower == "install"
+          block:
+
+            #------------------------------------------------------------------
+            # Run command to show the available inactive package information
+            #------------------------------------------------------------------
+            - name: "{{ section }} | MODE INSTALL | command 'install' | Show the inactive package information"
+              vars:
+                ansible_command_timeout: 300
+              register: command_results
+              cisco.ios.ios_command:
+                commands:
+                  - command: show install inactive
+             
+            #------------------------------------------------------------------
+            # Parse data to get a Boolean.
+            #   True : package with required IOS-XE version found
+            #   False : package with required IOS-XE version not found
+            #------------------------------------------------------------------
+            - name: "{{ section }} | MODE INSTALL | command 'install' | Parse required version from inactive package information"
+              ansible.builtin.set_fact:
+                device_package_inactive: "{{  command_results.stdout[0] | 
+                    iosxe_parse_inactive(
+                      required_ios_version,
+                      True 
+                        if (debug_filter is defined and debug_filter) 
+                        else False
+                    ) 
+                  }}"
+            
+            #------------------------------------------------------------------
+            # Display boolean
+            #------------------------------------------------------------------
+            - name: "{{ section }} | MODE INSTALL | command 'install' | Debug"
+              when: debug
+              ansible.builtin.debug: var=device_package_inactive
+ 

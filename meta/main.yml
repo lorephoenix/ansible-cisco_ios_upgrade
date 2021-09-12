@@ -1,0 +1,22 @@
+collections:
+  - ansible.netcommon
+  - cisco.ios
+dependencies: []
+galaxy_info:
+  author: Christophe Vermeren
+  description: Manage IOS/IOS-XE software version on Cisco network devices
+  company: 
+  license: MIT
+  min_ansible_version: 2.9
+  platforms:
+    - name: IOS
+      versions:
+        - all 
+  galaxy_tags: 
+    - cisco
+    - ios
+    - network
+    - router
+    - switch
+
+  

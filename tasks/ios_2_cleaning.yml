@@ -1,0 +1,121 @@
+---
+# tasks file for ansible-cisco_ios_upgrade
+# 
+# ██╗ ██████╗ ███████╗        ██████╗          ██████╗██╗     ███████╗ █████╗ ███╗   ██╗██╗███╗   ██╗ ██████╗ 
+# ██║██╔═══██╗██╔════╝        ╚════██╗        ██╔════╝██║     ██╔════╝██╔══██╗████╗  ██║██║████╗  ██║██╔════╝ 
+# ██║██║   ██║███████╗         █████╔╝        ██║     ██║     █████╗  ███████║██╔██╗ ██║██║██╔██╗ ██║██║  ███╗
+# ██║██║   ██║╚════██║        ██╔═══╝         ██║     ██║     ██╔══╝  ██╔══██║██║╚██╗██║██║██║╚██╗██║██║   ██║
+# ██║╚██████╔╝███████║███████╗███████╗███████╗╚██████╗███████╗███████╗██║  ██║██║ ╚████║██║██║ ╚████║╚██████╔╝
+# ╚═╝ ╚═════╝ ╚══════╝╚══════╝╚══════╝╚══════╝ ╚═════╝╚══════╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═══╝╚═╝╚═╝  ╚═══╝ ╚═════╝ 
+# 
+
+- name: ios_2_cleaning
+  block:
+
+    - name: ios_2_cleaning | Define section
+      ansible.builtin.set_fact:
+        section: "ios_2_cleaning"
+
+    #--------------------------------------------------------------------------
+    # Run Cisco command 'dir' and capture the command output.
+    #--------------------------------------------------------------------------
+    - name: ios_2_cleaning | Run command 'dir <device_filesystem_list item>'
+      register: commands_output
+      cisco.ios.ios_command:
+        commands:
+          - "dir {{ item }}"
+      with_items: '{{ device_filesystem_list }}'
+
+    #--------------------------------------------------------------------------
+    # Parse from command 'dir'
+    # Exclude strings with the name
+    #   ansible_net_image
+    #   required_ios_binary
+    #--------------------------------------------------------------------------
+    - name: ios_2_cleaning | Parse from command 'dir <filesystem>'
+      ansible.builtin.set_fact:
+        file_deletion: '{{ commands_output.results
+          | parse_data_for_deletion(
+            ansible_net_image,
+            required_ios_binary,
+            True 
+              if (debug_filter is defined and debug_filter) 
+              else False
+          ) }}'
+
+    #--------------------------------------------------------------------------
+    # Print list when debug_all or debug_ios has the boolean True.
+    # file_deletion = 
+    #   [
+    #     {
+    #       'filesystem' : 'flash:',
+    #       'deletion' : [ <filename1>, <directory1> ], 
+    #     },
+    #   ]
+    #--------------------------------------------------------------------------
+    - name: ios_2_cleaning | Summarize files to be deleted
+      when: debug
+      ansible.builtin.debug: 
+        msg: "delete {{ item.0.filesystem }}{{ item.1 }}"
+      loop: "{{ file_deletion | subelements('deletion') }}"
+    
+    #--------------------------------------------------------------------------
+    # Delete unused IOS images and directories
+    #--------------------------------------------------------------------------
+    - name: ios_2_cleaning | Delete unused IOS images and directories
+      cisco.ios.ios_command:
+        commands: "delete /force /recursive {{ item.0.filesystem }}{{ item.1 }}"
+      loop: "{{ file_deletion | subelements('deletion') }}"
+
+  tags:
+    - cleaning
+
+#--------------------------------------------------------------------------
+# Define the next step
+#--------------------------------------------------------------------------
+- name: ios_2_cleaning | Next step
+  when:
+    - not using_tag
+  ansible.builtin.set_fact:
+    ios_next_step: "staging"
+
+#                       _ _   
+#   _ __ ___  ___ _   _| | |_ 
+#  | '__/ _ \/ __| | | | | __|
+#  | | |  __/\__ \ |_| | | |_ 
+#  |_|  \___||___/\__,_|_|\__|
+#
+#------------------------------------------------------------------------------
+# Display result status
+#------------------------------------------------------------------------------
+- name: ios_2_cleaning | results
+  ansible.builtin.debug: 
+    msg:
+      - "{{
+          ( 
+            file_deletion 
+              | subelements('deletion') 
+              | length
+              | string 
+          ) + ' files/folders deleted.'
+      }}"
+      - "{{
+          (
+            'Next step is ' + ios_next_step
+          ) if
+            (
+              not using_tag
+            ) 
+          else 
+            (
+              (
+                'Ending of tag cleaning.'
+              ) if 
+                  (
+                    ios_next_step|lower == 'cleaning'
+                  )
+                else ( 'Next step is ' + ios_next_step )
+            )
+        }}"
+  tags:
+    - cleaning
