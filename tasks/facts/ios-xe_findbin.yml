@@ -1,0 +1,92 @@
+---
+# tasks file for ansible-cisco_iosxe_upgrade
+#
+# ██╗ ██████╗ ███████╗     ██╗  ██╗███████╗        ███████╗██╗███╗   ██╗██████╗ ██████╗ ██╗███╗   ██╗
+# ██║██╔═══██╗██╔════╝     ╚██╗██╔╝██╔════╝        ██╔════╝██║████╗  ██║██╔══██╗██╔══██╗██║████╗  ██║
+# ██║██║   ██║███████╗█████╗╚███╔╝ █████╗          █████╗  ██║██╔██╗ ██║██║  ██║██████╔╝██║██╔██╗ ██║
+# ██║██║   ██║╚════██║╚════╝██╔██╗ ██╔══╝          ██╔══╝  ██║██║╚██╗██║██║  ██║██╔══██╗██║██║╚██╗██║
+# ██║╚██████╔╝███████║     ██╔╝ ██╗███████╗███████╗██║     ██║██║ ╚████║██████╔╝██████╔╝██║██║ ╚████║
+# ╚═╝ ╚═════╝ ╚══════╝     ╚═╝  ╚═╝╚══════╝╚══════╝╚═╝     ╚═╝╚═╝  ╚═══╝╚═════╝ ╚═════╝ ╚═╝╚═╝  ╚═══╝
+#
+- name: ios-xe_findbin
+  block:
+
+    #--------------------------------------------------------------------------
+    # Parse data from ansible.builtin.ios_facts - to get filesystem name from
+    # rthe image file the device is running.
+    #--------------------------------------------------------------------------
+    - name: "{{ section }} | facts | ios-xe_findbin | Capture the filesystem from running image file"
+      ansible.builtin.set_fact:
+        device_filesystem: "{{ ansible_net_image.split(':')[0] }}"
+        device_filesystem_list: []
+        found_required_file: False
+              
+    #--------------------------------------------------------------------------
+    # Build a list of unique filesystem from device without stack 
+    # functionality.
+    #--------------------------------------------------------------------------
+    - name: "{{ section }} | facts | ios-xe_findbin | Build 'device_filesystem_list' for routers or standalone switches."
+      when: 
+        - device_product|lower  == "router" or device_version_info|length == 1
+      ansible.builtin.set_fact:
+        device_filesystem_list: "{{ device_filesystem_list + [ device_filesystem + ':' ] }}"
+      
+    #--------------------------------------------------------------------------
+    # Build a list of unique filesystem from device without stack 
+    # functionality.
+    #--------------------------------------------------------------------------
+    - name: "{{ section }} | facts | ios-xe_findbin | Build 'device_filesystem_list' for stacked switches"
+      when: 
+        - device_product|lower  == "switch"
+        - device_version_info|length > 1
+      ansible.builtin.set_fact:
+        device_filesystem_list: "{{ device_filesystem_list + 
+          [ device_filesystem + '-' + ( item['Switch'] | string ) + ':' ] }}"
+      with_items: '{{ device_version_info }}'
+      
+    #--------------------------------------------------------------------------
+    # Run Cisco command 'show <device_filesystem_list item>' and capture the command
+    # output.
+    #--------------------------------------------------------------------------
+    - name: "{{ section }} | facts | ios-xe_findbin | Run command 'dir <device_filesystem>'"
+      register: commands_output
+      cisco.ios.ios_command:
+        commands:
+          - "dir {{ item}}"
+      with_items: "{{ device_filesystem_list }}"
+    
+    #--------------------------------------------------------------------------
+    # device_findfile_info = {
+    #   <filesystem_1> : 
+    #       {
+    #         "filename": <file string>,
+    #       },
+    #   }
+    #--------------------------------------------------------------------------
+    - name: "{{ section }} | facts | ios-xe_findbin | DIR | Parse command data to get required BIN file"
+      ansible.builtin.set_fact:
+        device_findfile_info: "{{ commands_output.results
+            | iosxe_find_image_file( 
+              required_ios_binary,
+              True 
+                if (debug_filter is defined and debug_filter) 
+                else False
+          ) }}"
+    
+    #---------------------------------------------------------------------------
+    # Set Boolean if a filesystem does have the required binary file
+    #---------------------------------------------------------------------------
+    - name: "{{ section }} | facts | ios-xe_findbin | Found 'file'"
+      ansible.builtin.set_fact:
+        found_required_file: "{{ 
+            True 
+              if (device_findfile_info|length > 0)
+              else False 
+            }}" 
+
+    #---------------------------------------------------------------------------
+    # found_required_file = <Boolean>
+    #---------------------------------------------------------------------------
+    - name: "{{ section }} | facts | ios-xe_findbin | Debug"
+      when: debug
+      ansible.builtin.debug: var=found_required_file

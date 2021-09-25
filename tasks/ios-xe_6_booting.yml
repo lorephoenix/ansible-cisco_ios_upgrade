@@ -1,0 +1,203 @@
+---
+# tasks file for ansible-cisco_iosxe_upgrade
+#
+# ██╗ ██████╗ ███████╗     ██╗  ██╗███████╗         ██████╗         ██████╗  ██████╗  ██████╗ ████████╗██╗███╗   ██╗ ██████╗ 
+# ██║██╔═══██╗██╔════╝     ╚██╗██╔╝██╔════╝        ██╔════╝         ██╔══██╗██╔═══██╗██╔═══██╗╚══██╔══╝██║████╗  ██║██╔════╝ 
+# ██║██║   ██║███████╗█████╗╚███╔╝ █████╗          ███████╗         ██████╔╝██║   ██║██║   ██║   ██║   ██║██╔██╗ ██║██║  ███╗
+# ██║██║   ██║╚════██║╚════╝██╔██╗ ██╔══╝          ██╔═══██╗        ██╔══██╗██║   ██║██║   ██║   ██║   ██║██║╚██╗██║██║   ██║
+# ██║╚██████╔╝███████║     ██╔╝ ██╗███████╗███████╗╚██████╔╝███████╗██████╔╝╚██████╔╝╚██████╔╝   ██║   ██║██║ ╚████║╚██████╔╝
+# ╚═╝ ╚═════╝ ╚══════╝     ╚═╝  ╚═╝╚══════╝╚══════╝ ╚═════╝ ╚══════╝╚═════╝  ╚═════╝  ╚═════╝    ╚═╝   ╚═╝╚═╝  ╚═══╝ ╚═════╝ 
+# 
+- name: ios-xe_6_booting | Define section
+  ansible.builtin.set_fact:
+    section: "ios-xe_6_booting"
+
+#   _           _        _ _ 
+#  (_)_ __  ___| |_ __ _| | |
+#  | | '_ \/ __| __/ _` | | |
+#  | | | | \__ \ || (_| | | |
+#  |_|_| |_|___/\__\__,_|_|_|
+#                            
+#----------------------------------------------------------------------------
+# MODE INSTALL
+#----------------------------------------------------------------------------
+- name: "{{ section }} | MODE INSTALL"
+  when:
+    - device_install_mode|lower == "install"
+    - device_package_inactive
+    - required_ios_version != ansible_net_version
+  block:
+
+    - name: "{{ section }} | MODE INSTALL | facts"
+      block:
+
+        - name: "{{ section }} | MODE INSTALL | facts | Determine package configuration filename"
+          ansible.builtin.set_fact:
+            device_packageconf: "{{ required_ios_binary | replace('bin', 'conf') }}"
+  
+        #----------------------------------------------------------------------
+        # Run Cisco command 'show <device_filesystem>' and capture the command
+        # output.
+        #----------------------------------------------------------------------
+        - name: "{{ section }} | MODE INSTALL | facts | Run command 'dir <device_filesystem_list item>'"
+          register: commands_output
+          cisco.ios.ios_command:
+            commands:
+              - "dir {{ item }}"
+          with_items: "{{ device_filesystem_list }}"
+
+        #--------------------------------------------------------------------------
+        # found_packageconf_list = [ <Boolean> ]
+        #  True : Found package configuration file with the same name structure as 
+        #         the required_ios_binary.
+        #  False : Package configuration file not found.
+        #--------------------------------------------------------------------------
+        - name: "{{ section }} | MODE INSTALL | facts | Parse command data to find the required CONF file"
+          ansible.builtin.set_fact:
+            found_packageconf_list: "{{ commands_output.results
+                | iosxe_find_conf_file( 
+                  device_packageconf,
+                  True 
+                    if (debug_filter is defined and debug_filter) 
+                    else False
+              ) }}"
+    
+        #--------------------------------------------------------------------------
+        # Foreach required filesystem to check if there is enough space to add
+        # the required IOS-XE image.
+        #--------------------------------------------------------------------------
+        - name: "{{ section }} | MODE INSTALL | facts | Found required package configuration file"
+          ansible.builtin.assert:
+            that:
+              - not false in found_packageconf_list
+            fail_msg: "{{ device_packageconf }} is missing on one or more 
+                       required filesystem(s)."
+            success_msg: "Found {{ device_packageconf }} on all required 
+                          filesystem(s)."
+
+
+    - name: "{{ section }} | MODE INSTALL | copy"
+      when: not(false in found_packageconf_list)
+      block:
+           
+        - name: "{{ section }} | MODE INSTALL | copy | Copy 'package.conf' to 'package.conf.backup'"
+          cisco.ios.ios_command:
+            commands:
+              - command: "copy {{ item }}packages.conf {{item }}packages.conf.backup\n\n"
+          with_items: "{{ device_filesystem_info.keys() | list }}"
+  
+        - name: "{{ section }} | MODE INSTALL | copy | Copy {{ device_packageconf }} to 'package.conf'"
+          cisco.ios.ios_command:
+            commands:
+            - command: "copy {{ item }}{{ device_packageconf }} {{ item }}packages.conf \n\n"
+          with_items: "{{ device_filesystem_info.keys() | list }}"
+
+        - name: "{{ section }} | MODE INSTALL | copy | Read 'packages.conf'"
+          register: commands_output
+          cisco.ios.ios_command:
+            commands:
+              - "more {{ item }}packages.conf"
+          with_items: "{{ device_filesystem_list }}"
+
+        - name: "{{ section }} | MODE INSTALL | copy | Parse 'packages.conf'"
+          ansible.builtin.set_fact:
+            build_version: "{{ commands_output.results
+              | iosxe_get_build_version( 
+                  required_ios_version,
+                  True 
+                    if (debug_filter is defined and debug_filter) 
+                  else False
+            ) }}"
+
+        - name: "{{ section }} | MODE INSTALL | copy | Build version is {{ required_ios_version }}"
+          ansible.builtin.assert:
+            that:
+              - not false in build_version
+            fail_msg: "The 'packages.conf' file(s) doesn't have the correct 
+                      'Build:' version number, which is 
+                      {{ required_ios_version }}."
+            success_msg: "The 'packages.conf' file(s) has the correct build
+                         version number, which is {{ required_ios_version }}."
+
+#--------------------------------------------------------------------------
+# Whenever you make changes to the RPM configuration, you must save the 
+# changes to memory so they will not be lost if the system is rebooted. 
+# There are two types of configuration files: the running 
+# (current operating) configuration and the startup configuration. The 
+# running configuration is stored in RAM; the startup configuration is 
+# stored in NVRAM.
+#--------------------------------------------------------------------------
+- name: "{{ section }} | MODE INSTALL | Save running to startup when modified"
+  cisco.ios.ios_config:
+    save_when: modified
+
+#--------------------------------------------------------------------------
+# Reload device
+#--------------------------------------------------------------------------
+- name: "{{ section }} | MODE INSTALL | Reload the Device"
+  vars:
+    ansible_command_timeout: 120
+  cisco.ios.ios_command:
+    commands:
+      - command: "reload {{ 
+                (
+                  'in ' + ( reload_in|string )
+                ) if(reload_in is defined and reload_in|string != '0')
+                  else ''
+               }}\n\n"
+
+#------------------------------------------------------------------------------
+# Reset connection
+#------------------------------------------------------------------------------
+- name: "{{ section }} | MODE INSTALL | Reset the persitent SSH connection"
+  meta: reset_connection
+
+#------------------------------------------------------------------------------
+# Wait for device
+#------------------------------------------------------------------------------
+- name: "{{ section }} | MODE INSTALL | Wait for device to come back online"
+  ansible.builtin.wait_for:
+    host: "{{ ansible_host }}"
+    port: 22
+    timeout: 1800
+    delay: "{{ 
+            (
+              (
+                (
+                  900 + ((reload_in|int) * 60)
+                ) if(reload_in is defined and reload_in|string != '0' )
+                  else 900
+              )
+                if (show_switch)
+                else 
+                (
+                  (
+                    600 + ((reload_in|int) * 60)
+                  ) if(reload_in is defined and reload_in|string != '0' )
+                  else 600          
+                )
+            ) if (device_product|lower == 'switch')
+              else (
+                (
+                  600 + ((reload_in|int) * 60)
+                ) if(reload_in is defined and reload_in|string != '0' )
+                else 600
+              )
+         }}"
+  delegate_to: localhost
+
+- name: "{{ section }} | MODE INSTALL | Gathering Facts"
+  cisco.ios.ios_facts:
+    gather_subset: hardware
+    
+- name: "{{ section }} | MODE INSTALL | Assert that the IOS-XE version is correct"
+  ansible.builtin.assert:
+    that:
+      - required_ios_version == ansible_net_version
+    fail_msg: "Software Upgrade failed. The running IOS-XE version is {{ ansible_net_version }}, not {{ required_ios_version }}"
+    success_msg: "Software Upgrade has been completed"
+
+  
+  
+
+

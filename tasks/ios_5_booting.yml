@@ -54,6 +54,21 @@
         save_when: always
 
     #--------------------------------------------------------------------------
+<<<<<<< HEAD
+=======
+    # Whenever you make changes to the RPM configuration, you must save the 
+    # changes to memory so they will not be lost if the system is rebooted. 
+    # There are two types of configuration files: the running 
+    # (current operating) configuration and the startup configuration. The 
+    # running configuration is stored in RAM; the startup configuration is 
+    # stored in NVRAM.
+    #--------------------------------------------------------------------------
+    - name: "{{ section }} | MODE INSTALL | Save running to startup when modified"
+      cisco.ios.ios_config:
+        save_when: modified
+
+    #--------------------------------------------------------------------------
+>>>>>>> origin/dev
     # Reload device
     #--------------------------------------------------------------------------
     - name: ios_5_booting | Reload the Device
@@ -81,7 +96,11 @@
     # Wait for device
     #--------------------------------------------------------------------------
     - name: ios_5_booting | Wait for device to come back online
+<<<<<<< HEAD
       wait_for:
+=======
+      ansible.builtin.wait_for:
+>>>>>>> origin/dev
          host: "{{ ansible_host }}"
          port: 22
          timeout: 1800

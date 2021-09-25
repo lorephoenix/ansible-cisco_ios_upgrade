@@ -154,8 +154,15 @@
     #--------------------------------------------------------------------------
     # Check if binary file already exist on active filesystem
     #--------------------------------------------------------------------------
+<<<<<<< HEAD
     - include: "facts/{{ ansible_net_iostype|lower}}_findbin.yml"
 
+=======
+    - ansible.builtin.include_tasks: "facts/{{ ansible_net_iostype|lower}}_findbin.yml"
+      tags: 
+      - staging
+      
+>>>>>>> origin/dev
   tags:
     - staging
 

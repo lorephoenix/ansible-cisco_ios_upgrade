@@ -1,0 +1,68 @@
+---
+# tasks file for ansible-cisco_iosxe_upgrade
+#
+# ██╗ ██████╗ ███████╗     ██╗  ██╗███████╗        ██╗███╗   ██╗███████╗████████╗ █████╗ ██╗     ██╗     
+# ██║██╔═══██╗██╔════╝     ╚██╗██╔╝██╔════╝        ██║████╗  ██║██╔════╝╚══██╔══╝██╔══██╗██║     ██║     
+# ██║██║   ██║███████╗█████╗╚███╔╝ █████╗          ██║██╔██╗ ██║███████╗   ██║   ███████║██║     ██║     
+# ██║██║   ██║╚════██║╚════╝██╔██╗ ██╔══╝          ██║██║╚██╗██║╚════██║   ██║   ██╔══██║██║     ██║     
+# ██║╚██████╔╝███████║     ██╔╝ ██╗███████╗███████╗██║██║ ╚████║███████║   ██║   ██║  ██║███████╗███████╗
+# ╚═╝ ╚═════╝ ╚══════╝     ╚═╝  ╚═╝╚══════╝╚══════╝╚═╝╚═╝  ╚═══╝╚══════╝   ╚═╝   ╚═╝  ╚═╝╚══════╝╚══════╝
+#
+- name: ios-xe_install
+  block:
+
+  #----------------------------------------------------------------------------
+  # Determine if the Cisco command 'install' exist
+  #----------------------------------------------------------------------------
+  - name: "{{ section }} | facts | ios-xe_install | Find the command 'install'"
+    ansible.builtin.set_fact:
+      install: '{{ commands_output_list.stdout[2]  | find_commands("install") }}'
+  
+  #----------------------------------------------------------------------------
+  # Determine if the Cisco command 'request' exist
+  #----------------------------------------------------------------------------
+  - name: "{{ section }} | facts | ios-xe_install | Find the command 'request'"
+    ansible.builtin.set_fact:
+      request: '{{ commands_output_list.stdout[2]  | find_commands("request") }}'
+  
+  #----------------------------------------------------------------------------
+  # Determine if the Cisco command 'software' exist
+  #----------------------------------------------------------------------------
+  - name: "{{ section }} | facts | ios-xe_install | Find the command 'software'"
+    ansible.builtin.set_fact:
+      software: '{{ commands_output_list.stdout[2]  | find_commands("software") }}'
+  #----------------------------------------------------------------------------
+  # Based on previous tasks to set which command to use.
+  #   1. install
+  #      Default selection
+  #   2. request
+  #      If command 'install' isn't recognized then try to use 'request'
+  #   3. software
+  #      If command 'request' isn't recognized then try to use 'software'
+  #----------------------------------------------------------------------------
+  - name: "{{ section }} | facts | ios-xe_install | Determine install command usage"
+    ansible.builtin.set_fact:
+      device_install_cmd: '{{ device_install_cmd|default("") 
+        | iosxe_install_cmd_usage(
+            install,
+            request,
+            software,
+            (
+              True 
+                if (debug_filter is defined and debug_filter) 
+                else False
+            )
+          ) }}'
+
+    #--------------------------------------------------------------------------
+    # Verify the variable 'device_install_cmd' isn't empty.
+    #--------------------------------------------------------------------------
+  - name: "{{ section }} | facts | ios-xe_install  | Verify 'device_install_cmd'"
+    ansible.builtin.assert:
+      that:
+        -  device_install_cmd != ""
+      msg: "Unable to detect the install command like 'install', 'request' or 
+           'software'."
+
+
+

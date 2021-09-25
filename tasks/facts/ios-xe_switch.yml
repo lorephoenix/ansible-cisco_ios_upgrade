@@ -1,0 +1,104 @@
+---
+# tasks file for ansible-cisco_iosxe_upgrade
+# 
+# ██╗ ██████╗ ███████╗     ██╗  ██╗███████╗        ███████╗██╗    ██╗██╗████████╗ ██████╗██╗  ██╗
+# ██║██╔═══██╗██╔════╝     ╚██╗██╔╝██╔════╝        ██╔════╝██║    ██║██║╚══██╔══╝██╔════╝██║  ██║
+# ██║██║   ██║███████╗█████╗╚███╔╝ █████╗          ███████╗██║ █╗ ██║██║   ██║   ██║     ███████║
+# ██║██║   ██║╚════██║╚════╝██╔██╗ ██╔══╝          ╚════██║██║███╗██║██║   ██║   ██║     ██╔══██║
+# ██║╚██████╔╝███████║     ██╔╝ ██╗███████╗███████╗███████║╚███╔███╔╝██║   ██║   ╚██████╗██║  ██║
+# ╚═╝ ╚═════╝ ╚══════╝     ╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝ ╚══╝╚══╝ ╚═╝   ╚═╝    ╚═════╝╚═╝  ╚═╝
+# 
+
+#------------------------------------------------------------------------------
+# If the list variable 'device_version_info' is empty then the remote device is 
+# classified as a router product else it is a switch product.
+#------------------------------------------------------------------------------
+- name: ios-xe_switch
+  when:
+    - device_version_info is defined
+    - device_version_info|length > 0
+  block:
+
+    #--------------------------------------------------------------------------
+    # Parse from command 'show ?' into a Boolean value.
+    # True: Found the string 'switch'.
+    # False: Unable to find the string 'switch'.
+    #--------------------------------------------------------------------------
+    - name: "{{ section }} | facts | ios-xe_switch | Parse from command 'show ?' to search the string 'switch'"
+      ansible.builtin.set_fact:
+        show_switch: "{{ commands_output_list.stdout[1] 
+          | find_commands('show switch',
+            (
+              True 
+                if (debug_filter is defined and debug_filter) 
+                else False
+            )
+          ) }}"
+    
+
+    #--------------------------------------------------------------------------
+    # Remote device is classified as a switch with stack abilities.
+    #--------------------------------------------------------------------------
+    - name: ios_sw_facts | facts | ios-xe_switch | SWITCH
+      when: show_switch
+      block:
+    
+      #------------------------------------------------------------------------
+      # Run Cisco command 'show switch' and capture the command output.
+      #------------------------------------------------------------------------
+      - name: "{{ section }} | facts | ios-xe_switch | SWITCH | Run command 'show switch'"
+        register: command_switch_output
+        cisco.ios.ios_command:
+          commands:
+            - "show switch"
+
+      #------------------------------------------------------------------------
+      # Parse data from command 'show switch'
+      #------------------------------------------------------------------------
+      - name: "{{ section }} | facts | ios-xe_switch | SWITCH | Parse 'show switch'"
+        ansible.builtin.set_fact:
+          device_switch_info: "{{ command_switch_output.stdout[0] 
+            | parse_show_switch( 
+                True 
+                  if (debug_filter is defined and debug_filter) 
+                  else False
+                ) }}"
+          switch_state_list: []
+
+      #------------------------------------------------------------------------
+      # Print list when debug has the boolean True.
+      # device_switch_info = [
+      #   {
+      #     "Current State": <model string>,
+      #     "H/W Version": <version integer>,
+      #     "Mac Address": <address string>,
+      #     "Priority": <value integer>,
+      #     "Role": <value string>,
+      #     "Switch": <value integer>,
+      #   },
+      # ]
+      #------------------------------------------------------------------------
+      - name: "{{ section }} | facts | ios-xe_switch | SWITCH | Debug"
+        when: debug
+        ansible.builtin.debug: var=device_switch_info
+
+      #------------------------------------------------------------------------
+      # Build a list with unique values behind dictionary key 'Current State'.
+      #------------------------------------------------------------------------
+      - name: "{{ section }} | facts | ios-xe_switch | SWITCH | Check switch 'Current State'"
+        ansible.builtin.set_fact:
+          switch_state_list: "{{ device_switch_info 
+            | selectattr('Current State', 'defined') 
+            | map(attribute='Current State') | unique | list }}"
+
+      #------------------------------------------------------------------------
+      # Check if the 'Current State' of each member has the same string value
+      # AND if set with the string "READY"
+      #------------------------------------------------------------------------
+      - name: "{{ section }} | facts | ios-xe_switch | SWITCH | Verify 'Current State' entries"
+        ansible.builtin.assert:
+          that:
+            - switch_state_list | length == 1
+            - "{{ True if (switch_state_list[0]|upper == 'READY') else False }}"
+          msg: "All members of the stack must have the 'Current State' set as
+                'Ready'."

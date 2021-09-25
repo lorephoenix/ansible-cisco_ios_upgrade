@@ -74,6 +74,11 @@
 # Define the next step
 #--------------------------------------------------------------------------
 - name: ios_2_cleaning | Next step
+<<<<<<< HEAD
+=======
+  when:
+    - not using_tag
+>>>>>>> origin/dev
   ansible.builtin.set_fact:
     ios_next_step: "staging"
 

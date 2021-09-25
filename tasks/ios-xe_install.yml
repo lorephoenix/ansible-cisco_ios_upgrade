@@ -1,0 +1,20 @@
+---
+
+#------------------------------------------------------------------
+# Run command to show the available inactive package information
+#------------------------------------------------------------------
+- name: "{{ section }} | MODE INSTALL | command 'install' | Show the inactive package information"
+  vars:
+    ansible_command_timeout: 1800
+  register: command_results
+  cisco.ios.ios_command:
+    commands:
+      - command: "install add file {{ item }}{{ device_findfile_info[item]['filename'] }}\n\n"
+  with_items: "{{ device_findfile_info.keys() | list }}"
+  tags:
+    - installing
+
+
+ansible_net_model
+ansible_net_iostype
+ansible_net_version

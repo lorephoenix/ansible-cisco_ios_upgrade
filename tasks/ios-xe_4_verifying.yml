@@ -1,36 +1,32 @@
 ---
-# tasks file for ansible-cisco_ios_upgrade
+# tasks file for ansible-cisco_iosxe_upgrade
 #
-# ██╗ ██████╗ ███████╗   ██╗  ██╗       ██╗   ██╗███████╗██████╗ ██╗███████╗██╗███╗   ██╗ ██████╗ 
-# ██║██╔═══██╗██╔════╝   ██║  ██║       ██║   ██║██╔════╝██╔══██╗██║██╔════╝██║████╗  ██║██╔════╝ 
-# ██║██║   ██║███████╗   ███████║       ██║   ██║█████╗  ██████╔╝██║█████╗  ██║██╔██╗ ██║██║  ███╗
-# ██║██║   ██║╚════██║   ╚════██║       ╚██╗ ██╔╝██╔══╝  ██╔══██╗██║██╔══╝  ██║██║╚██╗██║██║   ██║
-# ██║╚██████╔╝███████║███████╗██║███████╗╚████╔╝ ███████╗██║  ██║██║██║     ██║██║ ╚████║╚██████╔╝
-# ╚═╝ ╚═════╝ ╚══════╝╚══════╝╚═╝╚══════╝ ╚═══╝  ╚══════╝╚═╝  ╚═╝╚═╝╚═╝     ╚═╝╚═╝  ╚═══╝ ╚═════╝ 
-# 
+# ██╗ ██████╗ ███████╗     ██╗  ██╗███████╗   ██╗  ██╗       ██╗   ██╗███████╗██████╗ ██╗███████╗██╗   ██╗██╗███╗   ██╗ ██████╗ 
+# ██║██╔═══██╗██╔════╝     ╚██╗██╔╝██╔════╝   ██║  ██║       ██║   ██║██╔════╝██╔══██╗██║██╔════╝╚██╗ ██╔╝██║████╗  ██║██╔════╝ 
+# ██║██║   ██║███████╗█████╗╚███╔╝ █████╗     ███████║       ██║   ██║█████╗  ██████╔╝██║█████╗   ╚████╔╝ ██║██╔██╗ ██║██║  ███╗
+# ██║██║   ██║╚════██║╚════╝██╔██╗ ██╔══╝     ╚════██║       ╚██╗ ██╔╝██╔══╝  ██╔══██╗██║██╔══╝    ╚██╔╝  ██║██║╚██╗██║██║   ██║
+# ██║╚██████╔╝███████║     ██╔╝ ██╗███████╗███████╗██║███████╗╚████╔╝ ███████╗██║  ██║██║██║        ██║   ██║██║ ╚████║╚██████╔╝
+# ╚═╝ ╚═════╝ ╚══════╝     ╚═╝  ╚═╝╚══════╝╚══════╝╚═╝╚══════╝ ╚═══╝  ╚══════╝╚═╝  ╚═╝╚═╝╚═╝        ╚═╝   ╚═╝╚═╝  ╚═══╝ ╚═════╝ 
+#
 
-- name: ios_4_verifying | Define section
+- name: ios-xe_4_verifying | Define section
   ansible.builtin.set_fact:
     section: "ios_4_verifying"
-  tags:
-    - verifying
 
 #------------------------------------------------------------------------------
 # Image exist on device filesystem
 #------------------------------------------------------------------------------
-- name: ios_4_verifying | IOS image found
+- name: "{{ section }} | IOS image found"
   ansible.builtin.assert:
     that:
       - found_required_file
-    fail_msg: "The required IOS image couldn't be found on device filesystem."
-    success_msg: "The required IOS image exist on device filesystem."
-  tags:
-    - verifying
+    fail_msg: "The required IOS-XE image couldn't be found on device filesystem."
+    success_msg: "The required IOS-XE image exist on device filesystem."
 
 #------------------------------------------------------------------------------
 # Required IOS image found on device filesystem
 #------------------------------------------------------------------------------
-- name: ios_4_verifying
+- name:  "{{ section }}"
   when: found_required_file 
   block:
 
@@ -38,7 +34,7 @@
     # Validate if variable 'use_signature' is defined and set with the string
     # 'MD5' or 'SHA512'.
     #--------------------------------------------------------------------------
-    - name: ios_4_verifying | Validate use_signature
+    - name: "{{ section }} | Validate use_signature"
       ansible.builtin.assert:
         that:
           - "use_signature|upper == 'MD5' or use_signature|upper == 'SHA512'"
@@ -47,9 +43,9 @@
                   the string MD5 or SHA512."
 
     #--------------------------------------------------------------------------
-    # Use command: verify /(<md5>|<sha512>) flash:<image directory>/<image name>
+    # Use command: verify /(<md5>|<sha512>) flash:<image name>
     #--------------------------------------------------------------------------
-    - name: ios_4_verifying | Compute an MD5 or SHA512 signature for a file
+    - name: "{{ section }} | Compute an MD5 or SHA512 signature for a file"
       vars:
         ansible_command_timeout: 900
       register: hash_result
@@ -64,22 +60,16 @@
                     if (use_signature|upper == 'SHA512') 
                     else '' 
                 ) 
-          }} {{ filesystem }}{{ required_ios_binary[:-4] }}/{{ required_ios_binary }}"
-      loop_control:
-        loop_var: filesystem
-      with_items: "{{ device_filesystem_info.keys() | list }}"
-
+          }} {{ item }}{{ device_findfile_info[item]['filename'] }}"
+      with_items: "{{ device_findfile_info.keys() | list }}"
+    
     #--------------------------------------------------------------------------
     # If the string behind the variable 'required_ios_md5' or 
     # 'required_ios_sha512' matches with the output of the running command
     # verify then set the flag True into the list else False.
     #--------------------------------------------------------------------------
-    - name: ios_4_verifying | Validate checksum
-<<<<<<< HEAD
+    - name: "{{ section }} | Validate checksum"
       set_fact:
-=======
-      ansible.builtin.set_fact:
->>>>>>> origin/dev
         checksum_match: "{{ ( checksum_match|default([]) ) +  
             [ 
               (
@@ -98,11 +88,9 @@
       with_items: "{{ hash_result.results }}"
 
     #--------------------------------------------------------------------------
-    # example stacked device with 2 members:
-    # checksum_match = [ 'True' , 'False' ]
-    # which means that one member doesn't match the checksum test.
+    # checksum_match = [ 'True' ]
     #--------------------------------------------------------------------------
-    - name: ios_4_verifying | Debug
+    - name: "{{ section }} | Debug"
       when: debug
       ansible.builtin.debug: var=checksum_match
 
@@ -110,36 +98,26 @@
     # If the list contians the boolean False then to remove the IOS directory
     # on all member filesystems.
     #--------------------------------------------------------------------------
-    - name: ios_4_verifying | Verification failed on device - delete IOS images
+    - name: "{{ section }} | Verification failed on device - delete IOS image"
       when:
         - False in checksum_match
       cisco.ios.ios_command:
-        commands: "delete /force /recursive {{ filesystem }}{{ required_ios_binary[:-4] }}"
-      loop_control:
-        loop_var: filesystem
+        commands: "delete /force /recursive {{ item }}{{ device_findfile_info[item]['filename'] }}"
       with_items: "{{ device_filesystem_info.keys() | list }}"
       
-    - name: ios_4_staging | Validate when checksums are identical
+    - name: "{{ section }} | Validate when checksums are identical"
       ansible.builtin.assert:
         that: 
           - False not in checksum_match
         fail_msg: "Mismatch during validation of checksums"
         success_msg: "Checksum verification was successfully"
 
-  tags:
-    - verifying
-
 #------------------------------------------------------------------------------
 # Define the next step
 #------------------------------------------------------------------------------
-- name: ios_4_verifying | Next step
-<<<<<<< HEAD
-=======
-  when: 
-    - not using_tag
->>>>>>> origin/dev
+- name: "{{ section }} | Next step"
   ansible.builtin.set_fact:
-    ios_next_step: "booting"
+    ios_next_step: "installing"
 
 #                       _ _   
 #   _ __ ___  ___ _   _| | |_ 
@@ -150,7 +128,7 @@
 #------------------------------------------------------------------------------
 # Display result status
 #------------------------------------------------------------------------------
-- name: ios_4_verifying | Results
+- name: "{{ section }} | Results"
   ansible.builtin.debug:
     msg:
       - "{{
@@ -174,5 +152,3 @@
                   )
             )
         }}"
-  tags:
-    - verifying

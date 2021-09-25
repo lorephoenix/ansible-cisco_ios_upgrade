@@ -13,11 +13,19 @@ model_supported: True
 #------------------------------------------------------------------------------
 # Compliant IOS items
 #------------------------------------------------------------------------------
+<<<<<<< HEAD
 required_ios_binary: c2960l-universalk9-mz.152-7.E3.bin
 required_ios_md5: bab332918e80fbc2dbf57d638729aab7
 required_ios_sha512: b735ce58686ded48362603815a3be2fd3fdff172bc0b6d7ea6ddfbb83eda0f05d1576a089f9851021a65e04149514556bab7ec9ec69216c2f47c3390ff0eb3be
 required_ios_size_kb: 16213
 required_ios_version: 15.2(7)E3
+=======
+required_ios_binary: c2960l-universalk9-mz.152-7.E4.bin
+required_ios_md5: 8794f8924491046f4b1ac8965cd5dc3d
+required_ios_sha512: 5a7547e56a1eb12106c46f187af29254e22c66bdf3586c3768712b612e6deb249803a3a4b9f2e358a62bfb36b23cb11ccc00c5b09d06649fa02c5d6f35c5cb63
+required_ios_size_kb: 16244
+required_ios_version: 15.2(7)E4
+>>>>>>> origin/dev
 
 #------------------------------------------------------------------------------
 # USE items

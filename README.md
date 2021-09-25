@@ -1,7 +1,12 @@
 cisco_ios_upgrade
 =========
 
+<<<<<<< HEAD
 An Ansible role to maintain the system IOS software (backup, gather facts, cleaning, staging, verifying, and booting) on Cisco network devices.
+=======
+An Ansible role to maintain the system IOS/IOS-XE software (backup, gather facts, cleaning, staging, verifying, installing and
+booting) on Cisco network devices.
+>>>>>>> origin/dev
 ```
     cd roles
     git clone https://github.com/lorephoenix/ansible-cisco_ios_upgrade cisco_ios_upgrade
@@ -62,10 +67,17 @@ Below variables will enable or disable to display the debug variables.
     debug_filter: <Boolean>
 ```
 
+<<<<<<< HEAD
 #### 2. vars/\<ansible_net_iostype\>/\<model_variant\>/\<model_variant\>.yml
 
 The directory "vars" contains sub-directories. The sub-directories have uniqiue Cisco model variant names. 
 The Cisco model variant name is an extraction from the gather facts variable "ansible_net_model".
+=======
+#### 2. vars/\<model_variant\>/\<model_variant\>.yml
+
+The directory "vars" contains sub-directories. The sub-directories have uniqiue Cisco model variant names. 
+The Cisco modell variant name is an extraction from the gather facts variable "ansible_net_model".
+>>>>>>> origin/dev
 Inside each sub-directory contains a filename with the same model variant string.
 
 * `model_supported`: Flag if the model is supported or not.
@@ -129,6 +141,10 @@ The role has 6 distinct modes of operation following the same order as below:
 * **cleaning**: Clean unused images from the storage on the remote device to make room for new firmware.
 * **staging**: Stage the software on the remote device storage.
 * **verifying**: Check the checksum to make sure that the image is on the remote device storage and intact.
+<<<<<<< HEAD
+=======
+* **installing**: Unpack & distribute the software and create a package configuration file. (only on IOS-XE software)
+>>>>>>> origin/dev
 * **booting**: Put the software into service and reboot.
 
 
@@ -167,6 +183,15 @@ ansible-playbook your_playbook_name.yml -i your_inventory_file --tag staging \
     -e "data_transfer=upload" --limit inventory_hostname
 ```
 
+<<<<<<< HEAD
+=======
+Open IOS-XE Caveats
+--------------
+
+* If you encounter issues during the IOS-XE verification task due to timeout then use the [new libssh connection plugin](https://www.ansible.com/blog/new-libssh-connection-plugin-for-ansible-network) instead of Paramiko connection plugin.
+* No support for devices running IOS-XE with Bundle mode
+* Only able to upgrade IOS-XE software from Fuji version, since it is required to have the command "install add file"
+>>>>>>> origin/dev
 
 
 
@@ -179,3 +204,7 @@ Author Information
 ------------------
 
 - Christophe Vermeren | [GitHub](https://github.com/lorephoenix) | [Facebook](https://www.facebook.com/cvermeren)
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/dev

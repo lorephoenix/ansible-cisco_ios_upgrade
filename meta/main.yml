@@ -4,7 +4,11 @@ collections:
 dependencies: []
 galaxy_info:
   author: Christophe Vermeren
+<<<<<<< HEAD
   description: Manage IOS software version on Cisco network devices
+=======
+  description: Manage IOS/IOS-XE software version on Cisco network devices
+>>>>>>> origin/dev
   company: 
   license: MIT
   min_ansible_version: 2.9

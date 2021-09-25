@@ -1,0 +1,26 @@
+---
+# tasks file for ansible-cisco_iosxe_upgrade
+#
+# ██╗ ██████╗ ███████╗     ██╗  ██╗███████╗        ███╗   ███╗ ██████╗ ██████╗ ███████╗
+# ██║██╔═══██╗██╔════╝     ╚██╗██╔╝██╔════╝        ████╗ ████║██╔═══██╗██╔══██╗██╔════╝
+# ██║██║   ██║███████╗█████╗╚███╔╝ █████╗          ██╔████╔██║██║   ██║██║  ██║█████╗  
+# ██║██║   ██║╚════██║╚════╝██╔██╗ ██╔══╝          ██║╚██╔╝██║██║   ██║██║  ██║██╔══╝  
+# ██║╚██████╔╝███████║     ██╔╝ ██╗███████╗███████╗██║ ╚═╝ ██║╚██████╔╝██████╔╝███████╗
+# ╚═╝ ╚═════╝ ╚══════╝     ╚═╝  ╚═╝╚══════╝╚══════╝╚═╝     ╚═╝ ╚═════╝ ╚═════╝ ╚══════╝
+#
+- name: ios-xe_mode
+  block:
+
+    - name: "{{ section }} | facts | ios-xe_mode  | Check 'version mode'"
+      ansible.builtin.set_fact:
+        version_mode_list: '{{ device_version_info 
+          | selectattr("Mode", "defined") 
+          | map(attribute="Mode") | unique | list }}'
+
+    - name: "{{ section }} | facts | ios-xe_mode | Determine 'device_install_mode'"
+      ansible.builtin.set_fact:
+        device_install_mode: '{{ version_mode_list[0] | default("BUNDLE") }}'
+
+    - name: "{{ section }} | facts | ios-xe_mode  | Debug"
+      when: debug
+      ansible.builtin.debug: var=device_install_mode

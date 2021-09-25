@@ -131,8 +131,19 @@
     #--------------------------------------------------------------------------
     # Build device_version_info
     #--------------------------------------------------------------------------
+<<<<<<< HEAD
     - include: "facts/{{ ansible_net_iostype|lower}}_version.yml"
       when: commands_output_list.stdout|length > 0
+=======
+    - ansible.builtin.include_tasks: "facts/{{ ansible_net_iostype|lower}}_version.yml"
+      when: commands_output_list.stdout|length > 0
+      tags: 
+      - facts
+      - cleaning
+      - staging
+      - verifying
+      - booting
+>>>>>>> origin/dev
     
     #       _                                  _ _       _     
     #   ___| |__   _____      __  _____      _(_) |_ ___| |__  
@@ -143,8 +154,19 @@
     #--------------------------------------------------------------------------
     # Build device_switch_info
     #--------------------------------------------------------------------------
+<<<<<<< HEAD
     - include: "facts/{{ ansible_net_iostype|lower}}_switch.yml"
       when: commands_output_list.stdout|length > 1
+=======
+    - ansible.builtin.include_tasks: "facts/{{ ansible_net_iostype|lower}}_switch.yml"
+      when: commands_output_list.stdout|length > 1
+      tags: 
+      - facts
+      - cleaning
+      - staging
+      - verifying
+      - booting
+>>>>>>> origin/dev
     
     #    __ _           _  _     _       
     #   / _(_)_ __   __| || |__ (_)_ __  
@@ -155,7 +177,17 @@
     #--------------------------------------------------------------------------
     # Check if binary file already exist on active filesystem
     #--------------------------------------------------------------------------
+<<<<<<< HEAD
     - include: "facts/{{ ansible_net_iostype|lower}}_findbin.yml"
+=======
+    - ansible.builtin.include_tasks: "facts/{{ ansible_net_iostype|lower}}_findbin.yml"
+      tags: 
+      - facts
+      - cleaning
+      - staging
+      - verifying
+      - booting
+>>>>>>> origin/dev
 
     #       _                      __ _ _                     _                 
     #   ___| |__   _____      __  / _(_) | ___  ___ _   _ ___| |_ ___ _ __ ___  
@@ -167,7 +199,17 @@
     #--------------------------------------------------------------------------
     # Build device_filesystem, device_filesystem_list and device_filesystem_info
     #--------------------------------------------------------------------------
+<<<<<<< HEAD
     - include: "facts/{{ ansible_net_iostype|lower}}_filesystem.yml"
+=======
+    - ansible.builtin.include_tasks: "facts/{{ ansible_net_iostype|lower}}_filesystem.yml"
+      tags: 
+      - facts
+      - cleaning
+      - staging
+      - verifying
+      - booting
+>>>>>>> origin/dev
       
   tags:
     - facts

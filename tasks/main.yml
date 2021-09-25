@@ -20,6 +20,7 @@
     - verifying
     - booting
 
+<<<<<<< HEAD
 - name: main | Asserts
   ansible.builtin.assert:
     that:
@@ -34,6 +35,8 @@
     - verifying
     - booting
 
+=======
+>>>>>>> origin/dev
 - name: main | Set variable when using tag 'booting'
   ansible.builtin.set_fact:
     ios_next_step: booting
@@ -41,6 +44,16 @@
   tags: 
     - booting
 
+<<<<<<< HEAD
+=======
+- name: main | Set variable when using tag 'installing'
+  ansible.builtin.set_fact:
+    ios_next_step: installing
+    using_tag: True
+  tags: 
+    - installing
+
+>>>>>>> origin/dev
 - name: main | Set variable when using tag 'verifying'
   ansible.builtin.set_fact:
     ios_next_step: verifying
@@ -84,6 +97,7 @@
 #------------------------------------------------------------------------------
 # Load the task if the device to backup device configuration.
 #------------------------------------------------------------------------------
+<<<<<<< HEAD
 - include: 'backup.yml'
 
 #------------------------------------------------------------------------------
@@ -126,4 +140,200 @@
     - ios_next_step == "booting"
     - required_ios_binary != ansible_net_image
     - required_ios_version != ansible_net_version
+=======
+- ansible.builtin.include_tasks: 'backup.yml'
+
+#------------------------------------------------------------------------------
+# I O S 
+#------------------------------------------------------------------------------
+- name : main | IOS type
+  when: ansible_net_iostype.upper() == "IOS"
+  block:
+
+    #--------------------------------------------------------------------------
+    # IOS | Gathering additional facts from remote device
+    #--------------------------------------------------------------------------
+    - ansible.builtin.include_tasks: "{{ ansible_net_iostype|lower}}_1_facts.yml"
+      tags: 
+      - facts
+      - cleaning
+      - staging
+      - verifying
+      - booting
+
+    #--------------------------------------------------------------------------
+    # IOS | Cleaning IOS software
+    #--------------------------------------------------------------------------
+    - ansible.builtin.include_tasks: "{{ ansible_net_iostype|lower}}_2_cleaning.yml"
+      when:
+        - cleaning
+        - ios_next_step == "cleaning"
+      tags:
+      - cleaning
+      - staging
+      - verifying
+    
+    #--------------------------------------------------------------------------
+    # IOS | Staging IOS software
+    #--------------------------------------------------------------------------
+    - ansible.builtin.include_tasks: "{{ ansible_net_iostype|lower}}_3_staging.yml"
+      when:
+        - ios_next_step == "staging"
+        - required_ios_binary != ansible_net_image
+        - required_ios_version != ansible_net_version
+      tags:
+      - staging
+      - verifying
+
+    #--------------------------------------------------------------------------
+    # IOS | Verifing IOS software
+    #--------------------------------------------------------------------------
+    - ansible.builtin.include_tasks: "{{ ansible_net_iostype|lower}}_4_verifying.yml"
+      when:
+        - ios_next_step == "verifying" 
+        - required_ios_binary != ansible_net_image
+        - required_ios_version != ansible_net_version
+      tags:
+      - verifying
+
+    #--------------------------------------------------------------------------
+    # IOS | Booting IOS software
+    #--------------------------------------------------------------------------
+    - ansible.builtin.include_tasks: "{{ ansible_net_iostype|lower}}_5_booting.yml"
+      when:
+        - booting
+        - ios_next_step == "booting"
+        - required_ios_binary != ansible_net_image
+        - required_ios_version != ansible_net_version
+      tags:
+      - booting
+  
+  tags: 
+  - facts
+  - cleaning
+  - staging
+  - verifying
+  - booting
+# --------- END OF BLOCK IOS TYPE
+
+#------------------------------------------------------------------------------
+# I O S - X E
+#------------------------------------------------------------------------------
+- name : main | IOS-XE type
+  when: ansible_net_iostype.upper() == "IOS-XE"
+  block:
+
+    #--------------------------------------------------------------------------
+    # Gathering additional facts from remote device
+    #--------------------------------------------------------------------------
+    - ansible.builtin.include_tasks: 
+        file: "{{ ansible_net_iostype|lower}}_1_facts.yml"  
+        apply:
+          tags:
+          - facts
+          - cleaning
+          - staging
+          - verifying
+          - installing
+          - booting
+      tags:
+      - facts
+      - cleaning
+      - staging
+      - verifying
+      - installing
+      - booting
+
+    #--------------------------------------------------------------------------
+    # Cleaning IOS-XE software
+    #--------------------------------------------------------------------------
+    - ansible.builtin.include_tasks: 
+        file: "{{ ansible_net_iostype|lower}}_2_cleaning.yml"
+        apply:
+          tags:
+            - cleaning
+      when:
+        - cleaning
+        - ios_next_step == "cleaning"
+        - not device_package_inactive or device_package_inactive is undefined
+      tags:
+      - cleaning
+      - staging
+      - verifying
+      - installing
+
+    #--------------------------------------------------------------------------
+    # Staging IOS-XE software
+    #--------------------------------------------------------------------------
+    - ansible.builtin.include_tasks: 
+        file: "{{ ansible_net_iostype|lower}}_3_staging.yml"
+        apply: 
+          tags:
+            - staging
+      when:
+        - ios_next_step == "staging"
+        - not device_package_inactive or device_package_inactive is undefined
+        - required_ios_version != ansible_net_version
+      tags:
+      - staging
+      - verifying
+      - installing
+
+    #--------------------------------------------------------------------------
+    # Verifing IOS-XE software
+    #--------------------------------------------------------------------------
+    - ansible.builtin.include_tasks: 
+        file: "{{ ansible_net_iostype|lower}}_4_verifying.yml"
+        apply: 
+          tags:
+            - verifying
+      when:
+        - ios_next_step == "verifying" 
+        - not device_package_inactive
+        - required_ios_version != ansible_net_version
+      tags:
+      - verifying
+      - installing
+
+    #------------------------------------------------------------------------------
+    # Distributed IOS-XE software
+    #------------------------------------------------------------------------------
+    - ansible.builtin.include_tasks: 
+        file: "{{ ansible_net_iostype|lower}}_5_installing.yml"
+        apply:
+          tags:
+            - installing
+      when:
+        - ios_next_step == "installing" 
+        - not device_package_inactive
+        - required_ios_version != ansible_net_version
+      tags:
+      - installing
+  
+    #------------------------------------------------------------------------------
+    # Booting IOS-XE software
+    #------------------------------------------------------------------------------
+    - ansible.builtin.include_tasks: 
+        file: "{{ ansible_net_iostype|lower}}_6_booting.yml"
+        apply:
+          tags:
+            - booting
+      when:
+        - booting
+        - ios_next_step == "booting"
+        - device_package_inactive
+        - required_ios_version != ansible_net_version
+      tags:
+        - booting
+
+  tags: 
+  - facts
+  - cleaning
+  - staging
+  - verifying
+  - installing
+  - booting
+# --------- END OF BLOCK IOS-XE TYPE
+
+>>>>>>> origin/dev
 

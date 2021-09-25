@@ -40,7 +40,11 @@ cleaning: True
 # -----------------------------------------------------------------------------
 data_transfer: upload
 data_protocol: scp
+<<<<<<< HEAD
 data_upload_path: /opt/install/scp_share
+=======
+data_upload_path: /tmp/ios_share
+>>>>>>> origin/dev
 
 # -----------------------------------------------------------------------------
 # Debug mode
@@ -62,6 +66,15 @@ reload_in: 5
 remote_ssh_servers:
   - 127.0.0.1
 
+<<<<<<< HEAD
+=======
+# -----------------------------------------------------------------------------
+# If the data_transfer is set with the string "download" then it is required
+# to specify user credentials
+# -----------------------------------------------------------------------------
+remote_ssh_user: anonymous
+remote_ssh_password: secretPassword
+>>>>>>> origin/dev
 
 
 
